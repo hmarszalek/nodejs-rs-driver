@@ -5,255 +5,255 @@ import Uuid = types.Uuid;
 import InetAddress = types.InetAddress;
 
 export interface Aggregate {
-    argumentTypes: Array<{ code: dataTypes; info: any }>;
-    finalFunction: string;
-    initCondition: string;
-    keyspaceName: string;
-    returnType: string;
-    signature: string[];
-    stateFunction: string;
-    stateType: string;
-  }
+  argumentTypes: Array<{ code: dataTypes; info: any }>;
+  finalFunction: string;
+  initCondition: string;
+  keyspaceName: string;
+  returnType: string;
+  signature: string[];
+  stateFunction: string;
+  stateType: string;
+}
 
 export interface ClientState {
-    getConnectedHosts(): Host[];
+  getConnectedHosts(): Host[];
 
-    getInFlightQueries(host: Host): number;
+  getInFlightQueries(host: Host): number;
 
-    getOpenConnections(host: Host): number;
+  getOpenConnections(host: Host): number;
 
-    toString(): string;
-  }
+  toString(): string;
+}
 
 export interface DataTypeInfo {
-    code: dataTypes;
-    info: string | DataTypeInfo | DataTypeInfo[];
-    options: {
-      frozen: boolean;
-      reversed: boolean;
-    };
-  }
+  code: dataTypes;
+  info: string | DataTypeInfo | DataTypeInfo[];
+  options: {
+    frozen: boolean;
+    reversed: boolean;
+  };
+}
 
 export interface ColumnInfo {
-    name: string;
-    type: DataTypeInfo;
-  }
+  name: string;
+  type: DataTypeInfo;
+}
 
 export enum ColumnKind {
-    Regular = 0,
-    Static = 1,
-    ClusteringKey = 2,
-    PartitionKey = 3,
-  }
+  Regular = 0,
+  Static = 1,
+  ClusteringKey = 2,
+  PartitionKey = 3,
+}
 
 export interface ColumnMetadata {
-    type: string;
-    kind: ColumnKind;
-  }
+  type: string;
+  kind: ColumnKind;
+}
 
 export enum IndexKind {
-    custom = 0,
-    keys,
-    composites,
-  }
+  custom = 0,
+  keys,
+  composites,
+}
 
 export interface Index {
-    kind: IndexKind;
-    name: string;
-    options: object;
-    target: string;
+  kind: IndexKind;
+  name: string;
+  options: object;
+  target: string;
 
-    isCompositesKind(): boolean;
+  isCompositesKind(): boolean;
 
-    isCustomKind(): boolean;
+  isCustomKind(): boolean;
 
-    isKeysKind(): boolean;
-  }
+  isKeysKind(): boolean;
+}
 
 export interface MaterializedView extends TableMetadata {
-    tableName: string;
-  }
+  tableName: string;
+}
 
 export interface TableMetadata {
-    columns: { [name: string]: ColumnMetadata };
-    partitionKey: string[];
-    clusteringKey: string[];
-    partitioner: string | null;
-  }
+  columns: { [name: string]: ColumnMetadata };
+  partitionKey: string[];
+  clusteringKey: string[];
+  partitioner: string | null;
+}
 
 export interface QueryTrace {
-    requestType: string;
-    coordinator: InetAddress;
-    parameters: { [key: string]: any };
-    startedAt: number | types.Long;
-    duration: number;
-    clientAddress: string;
-    events: Array<{
-      id: Uuid;
-      activity: any;
-      source: any;
-      elapsed: any;
-      thread: any;
-    }>;
-  }
+  requestType: string;
+  coordinator: InetAddress;
+  parameters: { [key: string]: any };
+  startedAt: number | types.Long;
+  duration: number;
+  clientAddress: string;
+  events: Array<{
+    id: Uuid;
+    activity: any;
+    source: any;
+    elapsed: any;
+    thread: any;
+  }>;
+}
 
 export interface SchemaFunction {
-    argumentNames: string[];
-    argumentTypes: Array<{ code: dataTypes; info: any }>;
-    body: string;
-    calledOnNullInput: boolean;
-    keyspaceName: string;
-    language: string;
-    name: string;
-    returnType: string;
-    signature: string[];
-  }
+  argumentNames: string[];
+  argumentTypes: Array<{ code: dataTypes; info: any }>;
+  body: string;
+  calledOnNullInput: boolean;
+  keyspaceName: string;
+  language: string;
+  name: string;
+  returnType: string;
+  signature: string[];
+}
 
 export interface UdtField {
-    name: string;
-    type: DataTypeInfo;
-  }
+  name: string;
+  type: DataTypeInfo;
+}
 
 export interface Udt {
-    name: string;
-    keyspace: string;
-    fields: UdtField[];
-  }
+  name: string;
+  keyspace: string;
+  fields: UdtField[];
+}
 
 export enum StrategyKind {
-    SimpleStrategy = 0,
-    NetworkTopologyStrategy = 1,
-    LocalStrategy = 2,
-    Other = 3,
-  }
+  SimpleStrategy = 0,
+  NetworkTopologyStrategy = 1,
+  LocalStrategy = 2,
+  Other = 3,
+}
 
 export type Strategy =
-    | { kind: StrategyKind.SimpleStrategy; replicationFactor: number }
-    | { kind: StrategyKind.NetworkTopologyStrategy; datacenterRepfactors: { [datacenter: string]: number } }
-    | { kind: StrategyKind.LocalStrategy }
-    | { kind: StrategyKind.Other; name: string; data: { [key: string]: string } };
+  | { kind: StrategyKind.SimpleStrategy; replicationFactor: number }
+  | { kind: StrategyKind.NetworkTopologyStrategy; datacenterRepfactors: { [datacenter: string]: number } }
+  | { kind: StrategyKind.LocalStrategy }
+  | { kind: StrategyKind.Other; name: string; data: { [key: string]: string } };
 
 export interface KeyspaceMetadata {
-    strategy: Strategy;
-    durableWrites: boolean;
-    tables: { [name: string]: TableMetadata };
-    views: { [name: string]: MaterializedView };
-    userDefinedTypes: { [name: string]: Udt };
-  }
+  strategy: Strategy;
+  durableWrites: boolean;
+  tables: { [name: string]: TableMetadata };
+  views: { [name: string]: MaterializedView };
+  userDefinedTypes: { [name: string]: Udt };
+}
 
 export interface Metadata {
-    keyspaces: { [name: string]: { name: string; strategy: string } };
+  keyspaces: { [name: string]: { name: string; strategy: string } };
 
-    clearPrepared(): void;
+  clearPrepared(): void;
 
-    getAggregate(
-      keyspaceName: string,
-      name: string,
-      signature: string[] | Array<{ code: number; info: any }>,
-      callback: ValueCallback<Aggregate>,
-    ): void;
+  getAggregate(
+    keyspaceName: string,
+    name: string,
+    signature: string[] | Array<{ code: number; info: any }>,
+    callback: ValueCallback<Aggregate>,
+  ): void;
 
-    getAggregate(
-      keyspaceName: string,
-      name: string,
-      signature: string[] | Array<{ code: number; info: any }>,
-    ): Promise<Aggregate>;
+  getAggregate(
+    keyspaceName: string,
+    name: string,
+    signature: string[] | Array<{ code: number; info: any }>,
+  ): Promise<Aggregate>;
 
-    getAggregates(
-      keyspaceName: string,
-      name: string,
-      callback: ValueCallback<Aggregate[]>,
-    ): void;
+  getAggregates(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<Aggregate[]>,
+  ): void;
 
-    getAggregates(keyspaceName: string, name: string): Promise<Aggregate[]>;
+  getAggregates(keyspaceName: string, name: string): Promise<Aggregate[]>;
 
-    getFunction(
-      keyspaceName: string,
-      name: string,
-      signature: string[] | Array<{ code: number; info: any }>,
-      callback: ValueCallback<SchemaFunction>,
-    ): void;
+  getFunction(
+    keyspaceName: string,
+    name: string,
+    signature: string[] | Array<{ code: number; info: any }>,
+    callback: ValueCallback<SchemaFunction>,
+  ): void;
 
-    getFunction(
-      keyspaceName: string,
-      name: string,
-      signature: string[] | Array<{ code: number; info: any }>,
-    ): Promise<SchemaFunction>;
+  getFunction(
+    keyspaceName: string,
+    name: string,
+    signature: string[] | Array<{ code: number; info: any }>,
+  ): Promise<SchemaFunction>;
 
-    getFunctions(
-      keyspaceName: string,
-      name: string,
-      callback: ValueCallback<SchemaFunction[]>,
-    ): void;
+  getFunctions(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<SchemaFunction[]>,
+  ): void;
 
-    getFunctions(keyspaceName: string, name: string): Promise<SchemaFunction[]>;
+  getFunctions(keyspaceName: string, name: string): Promise<SchemaFunction[]>;
 
-    getMaterializedView(
-      keyspaceName: string,
-      name: string,
-      callback: ValueCallback<MaterializedView>,
-    ): void;
+  getMaterializedView(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<MaterializedView>,
+  ): void;
 
-    getMaterializedView(
-      keyspaceName: string,
-      name: string,
-      callback: EmptyCallback,
-    ): Promise<MaterializedView>;
+  getMaterializedView(
+    keyspaceName: string,
+    name: string,
+    callback: EmptyCallback,
+  ): Promise<MaterializedView>;
 
-    getReplicas(
-      keyspaceName: string,
-      token: Buffer | token.Token | token.TokenRange,
-    ): Host[];
+  getReplicas(
+    keyspaceName: string,
+    token: Buffer | token.Token | token.TokenRange,
+  ): Host[];
 
-    getTable(
-      keyspaceName: string,
-      name: string,
-      callback: ValueCallback<TableMetadata>,
-    ): void;
+  getTable(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<TableMetadata>,
+  ): void;
 
-    getTable(keyspaceName: string, name: string): Promise<TableMetadata>;
+  getTable(keyspaceName: string, name: string): Promise<TableMetadata>;
 
-    getTokenRanges(): Set<token.TokenRange>;
+  getTokenRanges(): Set<token.TokenRange>;
 
-    getTokenRangesForHost(
-      keyspaceName: string,
-      host: Host,
-    ): Set<token.TokenRange> | null;
+  getTokenRangesForHost(
+    keyspaceName: string,
+    host: Host,
+  ): Set<token.TokenRange> | null;
 
-    getTrace(
-      traceId: Uuid,
-      consistency: types.consistencies,
-      callback: ValueCallback<QueryTrace>,
-    ): void;
+  getTrace(
+    traceId: Uuid,
+    consistency: types.consistencies,
+    callback: ValueCallback<QueryTrace>,
+  ): void;
 
-    getTrace(
-      traceId: Uuid,
-      consistency: types.consistencies,
-    ): Promise<QueryTrace>;
+  getTrace(
+    traceId: Uuid,
+    consistency: types.consistencies,
+  ): Promise<QueryTrace>;
 
-    getTrace(traceId: Uuid, callback: ValueCallback<QueryTrace>): void;
+  getTrace(traceId: Uuid, callback: ValueCallback<QueryTrace>): void;
 
-    getTrace(traceId: Uuid): Promise<QueryTrace>;
+  getTrace(traceId: Uuid): Promise<QueryTrace>;
 
-    getUdt(
-      keyspaceName: string,
-      name: string,
-      callback: ValueCallback<Udt>,
-    ): void;
+  getUdt(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<Udt>,
+  ): void;
 
-    getUdt(keyspaceName: string, name: string): Promise<Udt>;
+  getUdt(keyspaceName: string, name: string): Promise<Udt>;
 
-    newToken(components: Buffer[] | Buffer | string): token.Token;
+  newToken(components: Buffer[] | Buffer | string): token.Token;
 
-    newTokenRange(start: token.Token, end: token.Token): token.TokenRange;
+  newTokenRange(start: token.Token, end: token.Token): token.TokenRange;
 
-    refreshKeyspace(name: string, callback: EmptyCallback): void;
+  refreshKeyspace(name: string, callback: EmptyCallback): void;
 
-    refreshKeyspace(name: string): Promise<void>;
+  refreshKeyspace(name: string): Promise<void>;
 
-    refreshKeyspaces(waitReconnect: boolean, callback: EmptyCallback): void;
+  refreshKeyspaces(waitReconnect: boolean, callback: EmptyCallback): void;
 
-    refreshKeyspaces(waitReconnect?: boolean): Promise<void>;
+  refreshKeyspaces(waitReconnect?: boolean): Promise<void>;
 
-    refreshKeyspaces(callback: EmptyCallback): void;
-  }
+  refreshKeyspaces(callback: EmptyCallback): void;
+}
