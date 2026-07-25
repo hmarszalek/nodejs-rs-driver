@@ -144,8 +144,6 @@ export interface KeyspaceMetadata {
 export interface Metadata {
   keyspaces: { [name: string]: { name: string; strategy: string } };
 
-  clearPrepared(): void;
-
   refreshKeyspace(name: string, callback: EmptyCallback): void;
 
   refreshKeyspace(name: string): Promise<void>;
