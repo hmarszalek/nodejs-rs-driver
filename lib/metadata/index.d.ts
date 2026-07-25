@@ -144,100 +144,48 @@ export interface KeyspaceMetadata {
 export interface Metadata {
   keyspaces: { [name: string]: { name: string; strategy: string } };
 
-  refreshKeyspace(name: string, callback: EmptyCallback): void;
+  refreshKeyspace(name: string): void;
 
-  refreshKeyspace(name: string): Promise<void>;
-
-  refreshKeyspaces(waitReconnect: boolean, callback: EmptyCallback): void;
-
-  refreshKeyspaces(waitReconnect?: boolean): Promise<void>;
-
-  refreshKeyspaces(callback: EmptyCallback): void;
+  refreshKeyspaces(waitReconnect?: boolean): void;
 
   getTable(
     keyspaceName: string,
     name: string,
-    callback: ValueCallback<TableMetadata>,
-  ): void;
-
-  getTable(keyspaceName: string, name: string): Promise<TableMetadata>;
+  ): TableMetadata | null;
 
   getMaterializedView(
     keyspaceName: string,
     name: string,
-    callback: ValueCallback<MaterializedView>,
-  ): void;
+  ): MaterializedView | null;
 
-  getMaterializedView(
-    keyspaceName: string,
-    name: string,
-    callback: EmptyCallback,
-  ): Promise<MaterializedView>;
-
-  getUdt(
-    keyspaceName: string,
-    name: string,
-    callback: ValueCallback<Udt>,
-  ): void;
-
-  getUdt(keyspaceName: string, name: string): Promise<Udt>;
+  getUdt(keyspaceName: string, name: string): Udt | null;
 
   getAggregate(
     keyspaceName: string,
     name: string,
     signature: string[] | Array<{ code: number; info: any }>,
-    callback: ValueCallback<Aggregate>,
-  ): void;
-
-  getAggregate(
-    keyspaceName: string,
-    name: string,
-    signature: string[] | Array<{ code: number; info: any }>,
-  ): Promise<Aggregate>;
+  ): Aggregate | null;
 
   getAggregates(
     keyspaceName: string,
     name: string,
-    callback: ValueCallback<Aggregate[]>,
-  ): void;
-
-  getAggregates(keyspaceName: string, name: string): Promise<Aggregate[]>;
+  ): Aggregate[];
 
   getFunction(
     keyspaceName: string,
     name: string,
     signature: string[] | Array<{ code: number; info: any }>,
-    callback: ValueCallback<SchemaFunction>,
-  ): void;
-
-  getFunction(
-    keyspaceName: string,
-    name: string,
-    signature: string[] | Array<{ code: number; info: any }>,
-  ): Promise<SchemaFunction>;
+  ): SchemaFunction | null;
 
   getFunctions(
     keyspaceName: string,
     name: string,
-    callback: ValueCallback<SchemaFunction[]>,
-  ): void;
-
-  getFunctions(keyspaceName: string, name: string): Promise<SchemaFunction[]>;
+  ): SchemaFunction[];
 
   getTrace(
     traceId: Uuid,
-    consistency: types.consistencies,
-    callback: ValueCallback<QueryTrace>,
-  ): void;
-
-  getTrace(
-    traceId: Uuid,
-    consistency: types.consistencies,
-  ): Promise<QueryTrace>;
-
-  getTrace(traceId: Uuid, callback: ValueCallback<QueryTrace>): void;
-
-  getTrace(traceId: Uuid): Promise<QueryTrace>;
+    consistency?: types.consistencies,
+  ): QueryTrace | null;
 
   getReplicas(
     keyspaceName: string,
