@@ -142,11 +142,9 @@ export interface KeyspaceMetadata {
 }
 
 export interface Metadata {
-  keyspaces: { [name: string]: { name: string; strategy: string } };
+  getKeyspace(name: string): KeyspaceMetadata | null;
 
-  refreshKeyspace(name: string): void;
-
-  refreshKeyspaces(waitReconnect?: boolean): void;
+  getKeyspaces(): Map<string, KeyspaceMetadata>;
 
   getTable(
     keyspaceName: string,
