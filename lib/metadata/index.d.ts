@@ -146,6 +146,44 @@ export interface Metadata {
 
   clearPrepared(): void;
 
+  refreshKeyspace(name: string, callback: EmptyCallback): void;
+
+  refreshKeyspace(name: string): Promise<void>;
+
+  refreshKeyspaces(waitReconnect: boolean, callback: EmptyCallback): void;
+
+  refreshKeyspaces(waitReconnect?: boolean): Promise<void>;
+
+  refreshKeyspaces(callback: EmptyCallback): void;
+
+  getTable(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<TableMetadata>,
+  ): void;
+
+  getTable(keyspaceName: string, name: string): Promise<TableMetadata>;
+
+  getMaterializedView(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<MaterializedView>,
+  ): void;
+
+  getMaterializedView(
+    keyspaceName: string,
+    name: string,
+    callback: EmptyCallback,
+  ): Promise<MaterializedView>;
+
+  getUdt(
+    keyspaceName: string,
+    name: string,
+    callback: ValueCallback<Udt>,
+  ): void;
+
+  getUdt(keyspaceName: string, name: string): Promise<Udt>;
+
   getAggregate(
     keyspaceName: string,
     name: string,
@@ -188,38 +226,6 @@ export interface Metadata {
 
   getFunctions(keyspaceName: string, name: string): Promise<SchemaFunction[]>;
 
-  getMaterializedView(
-    keyspaceName: string,
-    name: string,
-    callback: ValueCallback<MaterializedView>,
-  ): void;
-
-  getMaterializedView(
-    keyspaceName: string,
-    name: string,
-    callback: EmptyCallback,
-  ): Promise<MaterializedView>;
-
-  getReplicas(
-    keyspaceName: string,
-    token: Buffer | token.Token | token.TokenRange,
-  ): Host[];
-
-  getTable(
-    keyspaceName: string,
-    name: string,
-    callback: ValueCallback<TableMetadata>,
-  ): void;
-
-  getTable(keyspaceName: string, name: string): Promise<TableMetadata>;
-
-  getTokenRanges(): Set<token.TokenRange>;
-
-  getTokenRangesForHost(
-    keyspaceName: string,
-    host: Host,
-  ): Set<token.TokenRange> | null;
-
   getTrace(
     traceId: Uuid,
     consistency: types.consistencies,
@@ -235,25 +241,19 @@ export interface Metadata {
 
   getTrace(traceId: Uuid): Promise<QueryTrace>;
 
-  getUdt(
+  getReplicas(
     keyspaceName: string,
-    name: string,
-    callback: ValueCallback<Udt>,
-  ): void;
+    token: Buffer | token.Token | token.TokenRange,
+  ): Host[];
 
-  getUdt(keyspaceName: string, name: string): Promise<Udt>;
+  getTokenRanges(): Set<token.TokenRange>;
+
+  getTokenRangesForHost(
+    keyspaceName: string,
+    host: Host,
+  ): Set<token.TokenRange> | null;
 
   newToken(components: Buffer[] | Buffer | string): token.Token;
 
   newTokenRange(start: token.Token, end: token.Token): token.TokenRange;
-
-  refreshKeyspace(name: string, callback: EmptyCallback): void;
-
-  refreshKeyspace(name: string): Promise<void>;
-
-  refreshKeyspaces(waitReconnect: boolean, callback: EmptyCallback): void;
-
-  refreshKeyspaces(waitReconnect?: boolean): Promise<void>;
-
-  refreshKeyspaces(callback: EmptyCallback): void;
 }
