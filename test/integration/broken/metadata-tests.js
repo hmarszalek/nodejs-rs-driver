@@ -26,9 +26,6 @@ describe("metadata @SERVER_API", function () {
         describe("#keyspaces", function () {
             it("should keep keyspace information up to date", function (done) {
                 const client = newInstance();
-                const nonSyncClient = newInstance({
-                    isMetadataSyncEnabled: false,
-                });
 
                 function checkKeyspaceWithInfo(
                     ks,
@@ -66,7 +63,6 @@ describe("metadata @SERVER_API", function () {
                 utils.series(
                     [
                         client.connect.bind(client),
-                        nonSyncClient.connect.bind(nonSyncClient),
                         function checkKeyspaces(next) {
                             const m = client.metadata;
                             assert.ok(m);
@@ -128,48 +124,7 @@ describe("metadata @SERVER_API", function () {
                                 "dc1",
                                 "1",
                             );
-
-                            // There should be no keyspace metadata for the non sync client until its fetched via refreshKeyspaces.
-                            const ks = nonSyncClient.metadata.keyspaces;
-                            assert.ok(ks["ks1"] === undefined);
-                            assert.ok(ks["ks2"] === undefined);
-                            assert.ok(ks["ks3"] === undefined);
-                            assert.ok(ks["ks4"] === undefined);
-
-                            nonSyncClient.metadata.refreshKeyspaces(
-                                function (err) {
-                                    assert.ifError(err);
-                                    checkKeyspace(
-                                        nonSyncClient,
-                                        "ks1",
-                                        "org.apache.cassandra.locator.SimpleStrategy",
-                                        "replication_factor",
-                                        "3",
-                                    );
-                                    checkKeyspace(
-                                        nonSyncClient,
-                                        "ks2",
-                                        "org.apache.cassandra.locator.SimpleStrategy",
-                                        "replication_factor",
-                                        "2",
-                                    );
-                                    checkKeyspace(
-                                        nonSyncClient,
-                                        "ks3",
-                                        "org.apache.cassandra.locator.SimpleStrategy",
-                                        "replication_factor",
-                                        "1",
-                                    );
-                                    checkKeyspace(
-                                        nonSyncClient,
-                                        "ks4",
-                                        "org.apache.cassandra.locator.NetworkTopologyStrategy",
-                                        "dc1",
-                                        "1",
-                                    );
-                                    next();
-                                },
-                            );
+                            next();
                         },
                         helper.toTask(
                             client.execute,
@@ -185,32 +140,9 @@ describe("metadata @SERVER_API", function () {
                                 "dc1",
                                 "1",
                             );
-
-                            // rf strategy should not have changed yet on nonSyncClient without refreshing explicitly.
-                            checkKeyspace(
-                                nonSyncClient,
-                                "ks3",
-                                "org.apache.cassandra.locator.SimpleStrategy",
-                                "replication_factor",
-                                "1",
-                            );
-
-                            nonSyncClient.metadata.refreshKeyspace(
-                                "ks3",
-                                function (err, ks) {
-                                    assert.ifError(err);
-                                    checkKeyspaceWithInfo(
-                                        ks,
-                                        "org.apache.cassandra.locator.NetworkTopologyStrategy",
-                                        "dc1",
-                                        "1",
-                                    );
-                                    next();
-                                },
-                            );
+                            next();
                         },
                         client.shutdown.bind(client),
-                        nonSyncClient.shutdown.bind(nonSyncClient),
                     ],
                     done,
                 );
@@ -703,9 +635,7 @@ describe("metadata @SERVER_API", function () {
         describe("#refreshKeyspace()", function () {
             describe("with no callback specified", function () {
                 it("should return keyspace in a promise", function () {
-                    const client = newInstance({
-                        isMetadataSyncEnabled: false,
-                    });
+                    const client = newInstance({});
                     return client
                         .connect()
                         .then(function () {
@@ -724,9 +654,7 @@ describe("metadata @SERVER_API", function () {
         describe("#refreshKeyspaces()", function () {
             describe("with no callback specified", function () {
                 it("should return keyspaces in a promise", function () {
-                    const client = newInstance({
-                        isMetadataSyncEnabled: false,
-                    });
+                    const client = newInstance({});
                     return client
                         .connect()
                         .then(function () {
@@ -1741,38 +1669,24 @@ describe("metadata @SERVER_API", function () {
             );
             it("should retrieve the updated metadata after a schema change", function (done) {
                 const client = newInstance();
-                const nonSyncClient = newInstance({
-                    isMetadataSyncEnabled: false,
-                });
-                const clients = [client, nonSyncClient];
                 utils.series(
                     [
                         client.connect.bind(client),
-                        nonSyncClient.connect.bind(nonSyncClient),
                         helper.toTask(
                             client.execute,
                             client,
                             "CREATE TABLE ks_tbl_meta.tbl_changing (id uuid PRIMARY KEY, text_sample text)",
                         ),
                         function checkTable1(next) {
-                            utils.each(
-                                clients,
-                                function (client, eachNext) {
-                                    client.metadata.getTable(
-                                        "ks_tbl_meta",
-                                        "tbl_changing",
-                                        function (err, table) {
-                                            assert.ifError(err);
-                                            assert.ok(table);
-                                            assert.strictEqual(
-                                                table.columns.length,
-                                                2,
-                                            );
-                                            eachNext();
-                                        },
-                                    );
+                            client.metadata.getTable(
+                                "ks_tbl_meta",
+                                "tbl_changing",
+                                function (err, table) {
+                                    assert.ifError(err);
+                                    assert.ok(table);
+                                    assert.strictEqual(table.columns.length, 2);
+                                    next();
                                 },
-                                next,
                             );
                         },
                         helper.toTask(
@@ -1781,36 +1695,24 @@ describe("metadata @SERVER_API", function () {
                             "ALTER TABLE ks_tbl_meta.tbl_changing ADD new_col1 timeuuid",
                         ),
                         function checkTable2(next) {
-                            utils.each(
-                                clients,
-                                function (clien, eachNext) {
-                                    client.metadata.getTable(
-                                        "ks_tbl_meta",
-                                        "tbl_changing",
-                                        function (err, table) {
-                                            assert.ifError(err);
-                                            assert.ok(table);
-                                            assert.strictEqual(
-                                                table.columns.length,
-                                                3,
-                                            );
-                                            assert.ok(
-                                                table.columnsByName["new_col1"],
-                                            );
-                                            assert.strictEqual(
-                                                table.columnsByName["new_col1"]
-                                                    .type.code,
-                                                types.dataTypes.timeuuid,
-                                            );
-                                            eachNext();
-                                        },
+                            client.metadata.getTable(
+                                "ks_tbl_meta",
+                                "tbl_changing",
+                                function (err, table) {
+                                    assert.ifError(err);
+                                    assert.ok(table);
+                                    assert.strictEqual(table.columns.length, 3);
+                                    assert.ok(table.columnsByName["new_col1"]);
+                                    assert.strictEqual(
+                                        table.columnsByName["new_col1"].type
+                                            .code,
+                                        types.dataTypes.timeuuid,
                                     );
+                                    next();
                                 },
-                                next,
                             );
                         },
-                        client.shutdown.bind(nonSyncClient),
-                        nonSyncClient.shutdown.bind(nonSyncClient),
+                        client.shutdown.bind(client),
                     ],
                     done,
                 );
@@ -1976,15 +1878,9 @@ describe("metadata @SERVER_API", function () {
                     keyspace: "ks_view_meta",
                     refreshSchemaDelay: 50,
                 });
-                const nonSyncClient = newInstance({
-                    keyspace: "ks_view_meta",
-                    isMetadataSyncEnabled: false,
-                });
-                const clients = [client, nonSyncClient];
                 utils.series(
                     [
                         client.connect.bind(client),
-                        nonSyncClient.connect.bind(nonSyncClient),
                         helper.toTask(
                             client.execute,
                             client,
@@ -1996,40 +1892,34 @@ describe("metadata @SERVER_API", function () {
                                 " 'SizeTieredCompactionStrategy' }",
                         ),
                         function checkView1(next) {
-                            utils.each(
-                                clients,
-                                function (client, eachNext) {
-                                    client.metadata.getMaterializedView(
-                                        "ks_view_meta",
-                                        "monthlyhigh",
-                                        function (err, view) {
-                                            assert.ifError(err);
-                                            assert.ok(view);
-                                            assert.strictEqual(
-                                                view.partitionKeys.length,
-                                                3,
-                                            );
-                                            assert.strictEqual(
-                                                view.partitionKeys
-                                                    .map((x) => x.name)
-                                                    .join(", "),
-                                                "game, year, month",
-                                            );
-                                            assert.strictEqual(
-                                                view.clusteringKeys
-                                                    .map((x) => x.name)
-                                                    .join(", "),
-                                                "score, user, day",
-                                            );
-                                            helper.assertContains(
-                                                view.compactionClass,
-                                                "SizeTieredCompactionStrategy",
-                                            );
-                                            eachNext();
-                                        },
+                            client.metadata.getMaterializedView(
+                                "ks_view_meta",
+                                "monthlyhigh",
+                                function (err, view) {
+                                    assert.ifError(err);
+                                    assert.ok(view);
+                                    assert.strictEqual(
+                                        view.partitionKeys.length,
+                                        3,
                                     );
+                                    assert.strictEqual(
+                                        view.partitionKeys
+                                            .map((x) => x.name)
+                                            .join(", "),
+                                        "game, year, month",
+                                    );
+                                    assert.strictEqual(
+                                        view.clusteringKeys
+                                            .map((x) => x.name)
+                                            .join(", "),
+                                        "score, user, day",
+                                    );
+                                    helper.assertContains(
+                                        view.compactionClass,
+                                        "SizeTieredCompactionStrategy",
+                                    );
+                                    next();
                                 },
-                                next,
                             );
                         },
                         helper.toTask(
@@ -2038,33 +1928,27 @@ describe("metadata @SERVER_API", function () {
                             "ALTER MATERIALIZED VIEW monthlyhigh" +
                                 " WITH compaction = { 'class' : 'LeveledCompactionStrategy' }",
                         ),
-                        function checkView1(next) {
-                            utils.each(
-                                clients,
-                                function (client, eachNext) {
-                                    client.metadata.getMaterializedView(
-                                        "ks_view_meta",
-                                        "monthlyhigh",
-                                        function (err, view) {
-                                            assert.ifError(err);
-                                            assert.ok(view);
-                                            assert.strictEqual(
-                                                view.partitionKeys.length,
-                                                3,
-                                            );
-                                            assert.strictEqual(
-                                                view.clusteringKeys.length,
-                                                3,
-                                            );
-                                            helper.assertContains(
-                                                view.compactionClass,
-                                                "LeveledCompactionStrategy",
-                                            );
-                                            eachNext();
-                                        },
+                        function checkView2(next) {
+                            client.metadata.getMaterializedView(
+                                "ks_view_meta",
+                                "monthlyhigh",
+                                function (err, view) {
+                                    assert.ifError(err);
+                                    assert.ok(view);
+                                    assert.strictEqual(
+                                        view.partitionKeys.length,
+                                        3,
                                     );
+                                    assert.strictEqual(
+                                        view.clusteringKeys.length,
+                                        3,
+                                    );
+                                    helper.assertContains(
+                                        view.compactionClass,
+                                        "LeveledCompactionStrategy",
+                                    );
+                                    next();
                                 },
-                                next,
                             );
                         },
                         helper.toTask(
@@ -2073,24 +1957,17 @@ describe("metadata @SERVER_API", function () {
                             "DROP MATERIALIZED VIEW monthlyhigh",
                         ),
                         function checkDropped(next) {
-                            utils.each(
-                                clients,
-                                function (client, eachNext) {
-                                    client.metadata.getMaterializedView(
-                                        "ks_view_meta",
-                                        "monthlyhigh",
-                                        function (err, view) {
-                                            assert.ifError(err);
-                                            assert.strictEqual(view, null);
-                                            eachNext();
-                                        },
-                                    );
+                            client.metadata.getMaterializedView(
+                                "ks_view_meta",
+                                "monthlyhigh",
+                                function (err, view) {
+                                    assert.ifError(err);
+                                    assert.strictEqual(view, null);
+                                    next();
                                 },
-                                next,
                             );
                         },
                         client.shutdown.bind(client),
-                        nonSyncClient.shutdown.bind(nonSyncClient),
                     ],
                     done,
                 );

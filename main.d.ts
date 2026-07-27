@@ -244,7 +244,6 @@ export interface ClientOptions {
     useBigIntAsLong?: boolean;
     useBigIntAsVarint?: boolean;
   };
-  isMetadataSyncEnabled?: boolean;
   maxPrepared?: number;
   metrics?: metrics.ClientMetrics;
   policies?: {

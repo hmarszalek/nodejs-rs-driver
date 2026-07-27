@@ -54,8 +54,8 @@ describe("Client", function () {
                 done();
             });
         });
-        it("should get the local and remote replicas for a given keyspace if isMetadataSyncEnabled is false but keyspace metadata is present", function (done) {
-            const client = newInstance({ isMetadataSyncEnabled: false });
+        it("should get the local and remote replicas for a given keyspace when keyspace metadata is present", function (done) {
+            const client = newInstance({});
             client.connect(function (err) {
                 assert.ifError(err);
                 client.metadata.refreshKeyspace(
@@ -67,18 +67,6 @@ describe("Client", function () {
                         done();
                     },
                 );
-            });
-        });
-        it("should return null if keyspace metadata is not present", function (done) {
-            const client = newInstance({ isMetadataSyncEnabled: false });
-            client.connect(function (err) {
-                assert.ifError(err);
-                const replicas = client.getReplicas(
-                    "sampleks1",
-                    utils.allocBufferFromArray([0, 0, 0, 1]),
-                );
-                assert.strictEqual(null, replicas);
-                done();
             });
         });
         it("should get the closest replica if no keyspace specified", function (done) {
@@ -169,7 +157,7 @@ describe("Client", function () {
                 );
             });
         });
-    }); 
+    });
     partitionerSuite("Murmur3Partitioner");
     partitionerSuite("RandomPartitioner");
     partitionerSuite("ByteOrderedPartitioner");
