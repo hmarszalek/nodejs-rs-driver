@@ -138,7 +138,7 @@ export interface KeyspaceMetadata {
   durableWrites: boolean;
   tables: { [name: string]: TableMetadata };
   views: { [name: string]: MaterializedView };
-  userDefinedTypes: { [name: string]: Udt };
+  udts: { [name: string]: Udt };
 }
 
 export interface Metadata {

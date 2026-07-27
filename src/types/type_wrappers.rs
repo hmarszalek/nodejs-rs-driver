@@ -29,7 +29,7 @@ pub enum CqlType {
     List = 0x0020,
     Map = 0x0021,
     Set = 0x0022,
-    UserDefinedType = 0x0030,
+    Udt = 0x0030,
     SmallInt = 0x0013,
     TinyInt = 0x0014,
     Time = 0x0012,
@@ -142,7 +142,7 @@ impl ToNapiValue for ComplexType<'_> {
                 obj.set_named_property("dimensions", dimensions)?;
             }
             ColumnType::UserDefinedType { frozen, definition } => {
-                obj.set_named_property(base_type_name, CqlType::UserDefinedType)?;
+                obj.set_named_property(base_type_name, CqlType::Udt)?;
                 obj.set_named_property("frozen", frozen)?;
                 obj.set_named_property("name", definition.name.as_ref())?;
                 obj.set_named_property("keyspace", definition.keyspace.as_ref())?;

@@ -130,7 +130,7 @@ export function convertComplexType(type: ComplexType): ColumnInfo {
                     [convertComplexType(type.subtype1), type.dimensions],
                     "vector",
                 );
-            case CqlType.UserDefinedType:
+            case CqlType.Udt:
                 return new ColumnInfo(type.baseType.valueOf(), {
                     name: type.name,
                     fields: type.udt_types.map(

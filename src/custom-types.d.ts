@@ -11,11 +11,11 @@
  * This type represents the guarantees, that the value returned from Rust promises to have.
  */
 export type ComplexType =
-  | { baseType: Exclude<CqlType, CqlType.List | CqlType.Set | CqlType.Map | CqlType.Vector | CqlType.UserDefinedType | CqlType.Tuple> }
+  | { baseType: Exclude<CqlType, CqlType.List | CqlType.Set | CqlType.Map | CqlType.Vector | CqlType.Udt | CqlType.Tuple> }
   | { baseType: CqlType.List | CqlType.Set; frozen: boolean; subtype1: ComplexType }
   | { baseType: CqlType.Map; frozen: boolean; subtype1: ComplexType; subtype2: ComplexType }
   | { baseType: CqlType.Vector; subtype1: ComplexType; dimensions: number }
-  | { baseType: CqlType.UserDefinedType; frozen: boolean; name: string; keyspace: string; udt_types: ComplexType[]; udt_name: string[] }
+  | { baseType: CqlType.Udt; frozen: boolean; name: string; keyspace: string; udt_types: ComplexType[]; udt_name: string[] }
   | { baseType: CqlType.Tuple; subtypes: ComplexType[] }
 
 /**
