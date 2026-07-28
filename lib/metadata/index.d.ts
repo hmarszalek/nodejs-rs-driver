@@ -200,4 +200,6 @@ export interface Metadata {
   newToken(components: Buffer[] | Buffer | string): token.Token;
 
   newTokenRange(start: token.Token, end: token.Token): token.TokenRange;
+
+  checkSchemaAgreement(): Boolean;
 }
