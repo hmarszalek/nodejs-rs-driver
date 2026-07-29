@@ -1568,7 +1568,6 @@ describe("Metadata", function () {
             ];
 
             const options = utils.extend({}, clientOptions.defaultOptions());
-            options.isMetadataSyncEnabled = false;
             const cc = getControlConnectionForTable(tableRow, columnRows);
             const metadata = new Metadata(options, cc);
             metadata.initialized = true;

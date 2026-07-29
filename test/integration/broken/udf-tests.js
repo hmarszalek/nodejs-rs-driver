@@ -292,7 +292,6 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
             const client = newInstance({ keyspace: keyspace });
             const nonSyncClient = newInstance({
                 keyspace: keyspace,
-                isMetadataSyncEnabled: false,
             });
             const clients = [client, nonSyncClient];
             utils.series(
@@ -615,7 +614,6 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
             const client = newInstance({ keyspace: keyspace });
             const nonSyncClient = newInstance({
                 keyspace: keyspace,
-                isMetadataSyncEnabled: false,
             });
             const clients = [client, nonSyncClient];
             utils.series(

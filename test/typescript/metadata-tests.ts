@@ -1,6 +1,7 @@
 import { Client, Host, metadata, types } from "../../main";
 import TableMetadata = metadata.TableMetadata;
 import QueryTrace = metadata.QueryTrace;
+import KeyspaceMetadata = metadata.KeyspaceMetadata;
 
 /*
  * TypeScript definitions compilation tests for metadata module.
@@ -13,34 +14,32 @@ async function myTest(): Promise<any> {
     });
 
     let promise: Promise<void>;
-    let s: string;
     let n: number;
     let hosts: Host[];
-    let emptyCb = (err: Error) => {};
 
     promise = client.connect();
 
     hosts = client.metadata.getReplicas("ks1", Buffer.from([0]));
 
-    let table: TableMetadata = await client.metadata.getTable("ks1", "table1");
-    client.metadata.getTable("ks1", "table1", (err, t) =>
-        useResult<TableMetadata>(err, t),
+    const table: TableMetadata | null = client.metadata.getTable(
+        "ks1",
+        "table1",
     );
 
-    client.metadata.refreshKeyspace("ks", emptyCb);
-    promise = client.metadata.refreshKeyspace("ks");
-    s = client.metadata.keyspaces["ks1"].strategy;
+    const keyspaces: Map<string, KeyspaceMetadata> =
+        client.metadata.getKeyspaces();
+    const keyspace: KeyspaceMetadata | null =
+        client.metadata.getKeyspace("ks1");
 
-    let trace: QueryTrace = await client.metadata.getTrace(types.Uuid.random());
-    client.metadata.getTrace(types.Uuid.random(), (err, t) =>
-        useResult<QueryTrace>(err, t),
+    const trace: QueryTrace | null = client.metadata.getTrace(
+        types.Uuid.random(),
+    );
+    const traceWithConsistency: QueryTrace | null = client.metadata.getTrace(
+        types.Uuid.random(),
+        types.consistencies.one,
     );
 
     hosts = client.getState().getConnectedHosts();
     n = client.getState().getInFlightQueries(hosts[0]);
     n = client.getState().getOpenConnections(hosts[0]);
-}
-
-function useResult<T>(err: Error, rs: T): void {
-    // Mock function that takes the parameters defined in the driver callback
 }
