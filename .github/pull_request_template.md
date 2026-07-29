@@ -9,7 +9,7 @@
 - [ ] I have split my patch into logically separate commits.
 - [ ] All commit messages clearly explain what they change and why.
 - [ ] I added relevant tests for new features and bug fixes.
-- [ ] All commits compile, pass static checks and pass test.
+- [ ] All commits compile, pass static checks and pass tests.
 - [ ] PR description sums up the changes and reasons why they should be introduced.
 - [ ] I have provided docstrings for the public items that I want to introduce.
 - [ ] I have made sure that the type stubs / TS definitions match the JS public API.
