@@ -1,6 +1,8 @@
 "use strict";
 
 const { assert } = require("chai");
+const path = require("path");
+const { Worker } = require("worker_threads");
 
 const rust = require("../../index");
 
@@ -115,6 +117,43 @@ describe("JsInstance / define_js_ctor!", function () {
                 "FinalizationRegistry callback should have run once the NapiRef was dropped, " +
                     "proving GC actually collected the object rather than merely deref() racing it",
             );
+        });
+    });
+
+    describe("N-API environment threads", function () {
+        this.timeout(10000);
+
+        it("separate threads require separate registration", function (done) {
+            const worker = new Worker(
+                path.resolve(__dirname, "js-instance-ctor-worker.js.worker"),
+            );
+
+            worker.on("message", (result) => {
+                worker.terminate().then(() => {
+                    try {
+                        assert.isTrue(
+                            result.ok,
+                            `worker failed: ${result.error}\n${result.stack || ""}`,
+                        );
+                        assert.match(
+                            result.notRegisteredMessage,
+                            /constructor is not registered yet/,
+                        );
+                        assert.deepEqual(result.built, {
+                            name: "worker",
+                            value: 1,
+                        });
+                        assert.match(
+                            result.duplicateMessage,
+                            /constructor is already registered/,
+                        );
+                        done();
+                    } catch (e) {
+                        done(e);
+                    }
+                });
+            });
+            worker.on("error", done);
         });
     });
 });
