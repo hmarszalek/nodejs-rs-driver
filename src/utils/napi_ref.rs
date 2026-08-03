@@ -52,7 +52,6 @@ impl<C> NapiRef<C> {
     /// lifetime is tied to the borrow of `env` passed in - preventing the returned object from
     /// outliving the `Env` it was retrieved through. `env` must refer to the same environment
     /// this `NapiRef` was created with.
-    #[expect(dead_code)]
     pub(crate) fn get<'env>(&self, env: &'env Env) -> napi::Result<JsInstance<'env, C>> {
         assert_eq!(
             self.env,
