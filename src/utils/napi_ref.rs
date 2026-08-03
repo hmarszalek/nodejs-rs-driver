@@ -29,7 +29,6 @@ pub struct NapiRef<C> {
 impl<C> NapiRef<C> {
     /// Pins `value` (a `C` instance) against garbage collection with a fresh, strong (ref count 1)
     /// `napi_ref`, taking ownership of the reference's lifetime.
-    #[expect(dead_code)]
     pub(crate) fn new(env: &Env, value: JsInstance<'_, C>) -> napi::Result<Self> {
         assert_eq!(
             value.env_raw(),

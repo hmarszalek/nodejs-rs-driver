@@ -1,6 +1,21 @@
+use napi::Env;
+use napi::bindgen_prelude::{
+    FnArgs, FromNapiValue, Function, FunctionRef, JsValue, Object, Unknown,
+};
+use std::collections::HashMap;
+use std::sync::Mutex;
+
+use crate::utils::js_instance::JsInstance;
+
 /// Zero-sized marker types naming each JS class that Rust constructs directly.
 /// They exist only to parametrize `JsInstance` and, in turn, `NapiRef`.
-pub mod js_constructible_class {}
+pub mod js_constructible_class {
+    /// Test-only marker for `TestJsClass(name, value)`, used by `crate::tests::napi_ref_tests`.
+    pub enum TestJsClass {}
+}
+
+/// Arguments passed to the test-only `TestJsClass(name, value)` constructor.
+type TestJsClassCtorArgs<'a> = FnArgs<(&'a str, i32)>;
 
 /// Defines a per-environment constructor registry for a single pure-JS class, together with:
 /// - a `#[napi]` `register_*_ctor` function that JS calls once per environment, at module load
@@ -30,7 +45,6 @@ pub mod js_constructible_class {}
 /// The `Return` type parameter of the underlying `Function`/`FunctionRef` is always ignored: it is
 /// only used by `Function::call`, but we always construct instances with `Function::new_instance`,
 /// so we set it to arbitrary `()`.
-#[expect(unused)]
 macro_rules! define_js_ctor {
     (
         $(#[$doc:meta])*
@@ -109,3 +123,12 @@ macro_rules! define_js_ctor {
         }
     };
 }
+
+define_js_ctor!(
+    /// `TestJsClass(name, value)` - test-only class used by `crate::tests::napi_ref_tests`.
+    static_name: TEST_JS_CLASS_CTOR,
+    register_fn: register_test_js_class_ctor,
+    build_fn: build_test_js_class,
+    args: TestJsClassCtorArgs<'_>,
+    class_name: TestJsClass,
+);
