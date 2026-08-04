@@ -1,0 +1,44 @@
+"use strict";
+
+const { parentPort } = require("worker_threads");
+const path = require("path");
+
+const rust = require(path.resolve(__dirname, "../../index"));
+
+class TestJsClass {
+    constructor(name, value) {
+        this.name = name;
+        this.value = value;
+    }
+}
+
+function run() {
+    // This worker's N-API environment has never registered TestJsClass's constructor,
+    // even though the main thread may already have.
+    let notRegisteredMessage = null;
+    try {
+        rust.testsBuildTestJsClass("before-register", 1);
+    } catch (e) {
+        notRegisteredMessage = e.message;
+    }
+
+    rust.registerTestJsClassCtor(TestJsClass);
+    const built = rust.testsBuildTestJsClass("worker", 1);
+
+    // Registering again in this same environment must still be rejected as a duplicate.
+    let duplicateMessage = null;
+    try {
+        rust.registerTestJsClassCtor(TestJsClass);
+    } catch (e) {
+        duplicateMessage = e.message;
+    }
+
+    return { notRegisteredMessage, built, duplicateMessage };
+}
+
+try {
+    const result = run();
+    parentPort.postMessage({ ok: true, ...result });
+} catch (e) {
+    parentPort.postMessage({ ok: false, error: e.message, stack: e.stack });
+}
