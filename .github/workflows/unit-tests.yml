@@ -32,5 +32,8 @@ jobs:
         shell: bash
       - name: Run unit tests
         run: npm run unit
+      - name: Run unit tests with expose-gc
+        run: npm run unit-gc
+        shell: bash
       - name: Run not fully integrated unit tests
         run: npm run unit-not-supported

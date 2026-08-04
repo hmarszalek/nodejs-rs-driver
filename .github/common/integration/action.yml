@@ -31,3 +31,9 @@ runs:
         CCM_PATH: "./scylla-ccm"
       shell: bash
       run: npm run integration
+    - name: Run integration tests on scylla with expose-gc
+      env:
+        CCM_IS_SCYLLA: "true"
+        CCM_PATH: "./scylla-ccm"
+      shell: bash
+      run: npm run integration-gc
