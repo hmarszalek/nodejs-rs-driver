@@ -6,14 +6,16 @@ use crate::utils::cache::{NapiRefCache, ReferenceCache, SingleNapiRefCache};
 use crate::utils::js_ctor::{
     build_column_metadata, build_local_strategy, build_materialized_view,
     build_network_topology_strategy, build_other_strategy, build_simple_strategy,
-    build_table_metadata, js_constructible_class,
+    build_table_metadata, build_udt, build_udt_field, js_constructible_class,
 };
 use crate::utils::js_instance::JsInstance;
 use crate::utils::napi_ref::NapiRef;
 use crate::utils::to_napi_obj::NamedMap;
 use napi::Env;
 use napi::bindgen_prelude::{FnArgs, JavaScriptClassExt, Reference};
-use scylla::cluster::metadata::{Column, ColumnKind, Keyspace, MaterializedView, Strategy, Table};
+use scylla::cluster::metadata::{
+    Column, ColumnKind, Keyspace, MaterializedView, Strategy, Table, UserDefinedType,
+};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -28,6 +30,9 @@ pub enum TableRecord {}
 
 /// Tags the `Record<string, MaterializedView>` handed to JS by `KeyspaceMetadata#views`.
 pub enum ViewRecord {}
+
+/// Tags the `Record<string, Udt>` handed to JS by `KeyspaceMetadata#udts`.
+pub enum UdtRecord {}
 
 /// A snapshot of the cluster's topology and schema metadata, as known by the driver
 /// at a given point in time.
@@ -123,10 +128,14 @@ pub struct KeyspaceWrapper {
     name: String,
     /// The keyspace's replication strategy, as handed to JS, built on first use.
     strategy_value: SingleNapiRefCache<StrategyValue>,
+    /// Caches of three collections, populated lazily
     tables: NapiRefCache<js_constructible_class::TableMetadata>,
     views: NapiRefCache<js_constructible_class::MaterializedView>,
+    udts: NapiRefCache<js_constructible_class::Udt>,
+    /// The records of the three collections above, as handed to JS, each built on first use.
     tables_record: SingleNapiRefCache<TableRecord>,
     views_record: SingleNapiRefCache<ViewRecord>,
+    udts_record: SingleNapiRefCache<UdtRecord>,
 }
 
 impl KeyspaceWrapper {
@@ -137,8 +146,10 @@ impl KeyspaceWrapper {
             strategy_value: SingleNapiRefCache::new(),
             tables: NapiRefCache::new(),
             views: NapiRefCache::new(),
+            udts: NapiRefCache::new(),
             tables_record: SingleNapiRefCache::new(),
             views_record: SingleNapiRefCache::new(),
+            udts_record: SingleNapiRefCache::new(),
         }
     }
 
@@ -186,6 +197,23 @@ impl KeyspaceWrapper {
                 .map(|view| convert_rust_materialized_view(env, view))
                 .transpose()?;
             ConvertedResult::Ok(view)
+        })
+    }
+
+    /// Looks up one user-defined type by name.
+    fn cached_udt<'env>(
+        &self,
+        env: &'env Env,
+        name: &str,
+    ) -> ConvertedResult<Option<JsInstance<'env, js_constructible_class::Udt>>> {
+        self.udts.get_or_init(env, name, || {
+            let udt = self
+                .keyspace()
+                .user_defined_types
+                .get(name)
+                .map(|udt| convert_rust_udt(env, udt))
+                .transpose()?;
+            ConvertedResult::Ok(udt)
         })
     }
 }
@@ -253,6 +281,24 @@ fn convert_rust_materialized_view<'env>(
             view.view_metadata.partitioner.as_deref(),
             view.base_table_name.as_str(),
         )),
+    )
+}
+
+fn convert_rust_udt<'env>(
+    env: &'env Env,
+    udt: &UserDefinedType<'static>,
+) -> napi::Result<JsInstance<'env, js_constructible_class::Udt>> {
+    let fields = udt
+        .field_types
+        .iter()
+        .map(|(field_name, field_type)| {
+            let typ = ComplexType::new_borrowed(field_type);
+            build_udt_field(env, FnArgs::from((field_name.as_ref(), typ)))
+        })
+        .collect::<napi::Result<Vec<_>>>()?;
+    build_udt(
+        env,
+        FnArgs::from((udt.name.as_ref(), udt.keyspace.as_ref(), fields)),
     )
 }
 
@@ -338,6 +384,28 @@ impl SessionWrapper {
                     return ConvertedResult::Ok(None);
                 };
                 ks.cached_view(env, &view)
+            })
+        })
+    }
+
+    /// Gets the definition of an user-defined type.
+    ///
+    /// The UDT is converted lazily and cached against its keyspace: repeated lookups for the
+    /// same UDT, whether through this method or through `KeyspaceWrapper::udts`,
+    /// return the same JS object.
+    #[napi(ts_return_type = "import('./lib/metadata/user-defined-type').Udt | null")]
+    pub fn get_udt<'env>(
+        &self,
+        env: &'env Env,
+        keyspace: String,
+        name: String,
+    ) -> JsResult<Option<JsInstance<'env, js_constructible_class::Udt>>> {
+        with_custom_error_sync(|| {
+            self.with_cluster_snapshot(env, |snapshot| {
+                let Some(ks) = snapshot.keyspace_wrapper(env, &keyspace)? else {
+                    return ConvertedResult::Ok(None);
+                };
+                ks.cached_udt(env, &name)
             })
         })
     }
@@ -481,6 +549,43 @@ impl KeyspaceWrapper {
                     String,
                     JsInstance<'env, js_constructible_class::MaterializedView>,
                 > = NamedMap::new(views);
+                record.into_jsinstance(env).map_err(ConvertedError::from)
+            })
+        })
+    }
+
+    /// Gets a single user-defined type of the keyspace by name.
+    #[napi(ts_return_type = "import('./lib/metadata/user-defined-type').Udt | null")]
+    pub fn get_udt<'env>(
+        &self,
+        env: &'env Env,
+        name: String,
+    ) -> JsResult<Option<JsInstance<'env, js_constructible_class::Udt>>> {
+        with_custom_error_sync(|| {
+            let udt = self.cached_udt(env, name.as_str())?;
+            ConvertedResult::Ok(udt)
+        })
+    }
+
+    /// User-defined types in the keyspace, keyed by type name.
+    #[napi(
+        getter,
+        ts_return_type = "Readonly<Record<string, import('./lib/metadata/user-defined-type').Udt>>"
+    )]
+    pub fn udts<'env>(&self, env: &'env Env) -> JsResult<JsInstance<'env, UdtRecord>> {
+        with_custom_error_sync(|| {
+            self.udts_record.get_or_init(env, || {
+                let udts = self.udts.get_or_init_all(env, || {
+                    self.keyspace()
+                        .user_defined_types
+                        .iter()
+                        .map(|(name, udt)| Ok((name.clone(), convert_rust_udt(env, udt)?)))
+                        .collect::<ConvertedResult<
+                            HashMap<String, JsInstance<'env, js_constructible_class::Udt>>,
+                        >>()
+                })?;
+                let record: NamedMap<String, JsInstance<'env, js_constructible_class::Udt>> =
+                    NamedMap::new(udts);
                 record.into_jsinstance(env).map_err(ConvertedError::from)
             })
         })

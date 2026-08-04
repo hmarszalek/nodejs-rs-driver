@@ -190,7 +190,7 @@ class Metadata {
      * @returns {Udt | null} The UDT definition, or `null` if it does not exist.
      */
     getUdt(keyspaceName: string, name: string): Udt | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getUdt(keyspaceName, name);
     }
 
     /**

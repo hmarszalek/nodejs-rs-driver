@@ -24,10 +24,10 @@ export interface ColumnInfoOptions {
  *  UDT is composed of fields, each with a name and an optional value of its own type. */
 export interface UdtInfo {
     /** Name of the user-defined type. */
-    name: string;
+    readonly name: string;
     /** Keyspace the user-defined type is defined in. */
-    keyspace: string;
-    fields: UdtField[];
+    readonly keyspace: string;
+    readonly fields: readonly UdtField[];
 }
 
 // ColumnInfo as a class is based on this monstrosity of a type
