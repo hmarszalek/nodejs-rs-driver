@@ -327,7 +327,6 @@ impl SessionWrapper {
     /// This approach helps avoid any ABA problems: if the driver refreshes the cluster state
     /// multiple times between two calls to this function, we will still detect that the cached
     /// snapshot is stale, because we keep the cached `Arc` alive.
-    #[expect(unused)]
     pub(crate) fn with_cluster_snapshot<T>(
         &self,
         env: &Env,
@@ -345,7 +344,7 @@ impl SessionWrapper {
             .is_none_or(|cached_state| !Arc::ptr_eq(&rust_cluster_state, &cached_state.inner))
         {
             *cache_guard = Some(JsThreadOnly::new(
-                ClusterSnapshot::new(rust_cluster_state),
+                ClusterSnapshot::new(rust_cluster_state, env)?,
                 env,
             ));
         }
