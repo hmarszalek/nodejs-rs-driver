@@ -269,7 +269,7 @@ class Metadata {
         keyspaceName: string,
         name: string,
     ): MaterializedView | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getMaterializedView(keyspaceName, name);
     }
 
     /**
