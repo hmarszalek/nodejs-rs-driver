@@ -132,7 +132,7 @@ describe("Client logging @SERVER_API", function () {
             await secondClient.shutdown();
         });
 
-        it("should disable logs for finalized client", async function () {
+        it("expose-gc: should disable logs for finalized client", async function () {
             if (!global.gc) {
                 console.warn(
                     "Test skipped: To run this test add --expose-gc flag",
