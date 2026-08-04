@@ -1,17 +1,18 @@
 use crate::errors::{ConvertedError, ConvertedResult, JsResult, with_custom_error_sync};
 use crate::metadata::host::cache_host_map;
 use crate::session::SessionWrapper;
-use crate::utils::cache::{ReferenceCache, SingleNapiRefCache};
+use crate::types::type_wrappers::ComplexType;
+use crate::utils::cache::{NapiRefCache, ReferenceCache, SingleNapiRefCache};
 use crate::utils::js_ctor::{
-    build_local_strategy, build_network_topology_strategy, build_other_strategy,
-    build_simple_strategy, js_constructible_class,
+    build_column_metadata, build_local_strategy, build_network_topology_strategy,
+    build_other_strategy, build_simple_strategy, build_table_metadata, js_constructible_class,
 };
 use crate::utils::js_instance::JsInstance;
 use crate::utils::napi_ref::NapiRef;
 use crate::utils::to_napi_obj::NamedMap;
 use napi::Env;
 use napi::bindgen_prelude::{FnArgs, JavaScriptClassExt, Reference};
-use scylla::cluster::metadata::{Keyspace, Strategy};
+use scylla::cluster::metadata::{Column, ColumnKind, Keyspace, Strategy, Table};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -20,6 +21,9 @@ pub enum KeyspaceRecord {}
 
 /// Tags the object handed to JS by `KeyspaceMetadata#strategy`.
 pub enum StrategyValue {}
+
+/// Tags the `Record<string, TableMetadata>` handed to JS by `KeyspaceMetadata#tables`.
+pub enum TableRecord {}
 
 /// A snapshot of the cluster's topology and schema metadata, as known by the driver
 /// at a given point in time.
@@ -115,6 +119,8 @@ pub struct KeyspaceWrapper {
     name: String,
     /// The keyspace's replication strategy, as handed to JS, built on first use.
     strategy_value: SingleNapiRefCache<StrategyValue>,
+    tables: NapiRefCache<js_constructible_class::TableMetadata>,
+    tables_record: SingleNapiRefCache<TableRecord>,
 }
 
 impl KeyspaceWrapper {
@@ -123,6 +129,8 @@ impl KeyspaceWrapper {
             cluster_state,
             name,
             strategy_value: SingleNapiRefCache::new(),
+            tables: NapiRefCache::new(),
+            tables_record: SingleNapiRefCache::new(),
         }
     }
 
@@ -136,6 +144,74 @@ impl KeyspaceWrapper {
             .get_keyspace(&self.name)
             .expect("the keyspace was present when this wrapper was built, and the pinned cluster state cannot change")
     }
+}
+
+impl KeyspaceWrapper {
+    /// Looks up one table by name, converting and caching it lazily.
+    fn cached_table<'env>(
+        &self,
+        env: &'env Env,
+        name: &str,
+    ) -> ConvertedResult<Option<JsInstance<'env, js_constructible_class::TableMetadata>>> {
+        self.tables.get_or_init(env, name, || {
+            let table = self
+                .keyspace()
+                .tables
+                .get(name)
+                .map(|table| convert_rust_table(env, table))
+                .transpose()?;
+            ConvertedResult::Ok(table)
+        })
+    }
+}
+
+/// Maps a `ColumnKind` to the numeric discriminant expected by the JS-side enum:
+/// `Regular = 0`, `Static = 1`, `ClusteringKey = 2`, `PartitionKey = 3`.
+#[deny(clippy::wildcard_enum_match_arm)]
+fn column_kind_discriminant(kind: &ColumnKind) -> u32 {
+    match kind {
+        ColumnKind::Regular => 0,
+        ColumnKind::Static => 1,
+        ColumnKind::Clustering => 2,
+        ColumnKind::PartitionKey => 3,
+        _ => unreachable!(
+            "If a new ColumnKind variant is added, update column_kind_discriminant to handle it"
+        ),
+    }
+}
+
+/// Converts a Rust driver's column map into an already-built `Record<string, ColumnMetadata>`,
+/// by directly constructing a `ColumnMetadata` JS instance for each column.
+fn columns_to_metadata<'a>(
+    env: &'a Env,
+    columns: &'a HashMap<String, Column>,
+) -> napi::Result<NamedMap<&'a str, JsInstance<'a, js_constructible_class::ColumnMetadata>>> {
+    columns
+        .iter()
+        .map(|(name, col)| {
+            let typ = ComplexType::new_borrowed(&col.typ);
+            let kind = column_kind_discriminant(&col.kind);
+            let column_metadata = build_column_metadata(env, FnArgs::from((typ, kind)))?;
+            Ok((name.as_str(), column_metadata))
+        })
+        .collect::<napi::Result<HashMap<_, _>>>()
+        .map(NamedMap::new)
+}
+
+fn convert_rust_table<'env>(
+    env: &'env Env,
+    table: &Table,
+) -> napi::Result<JsInstance<'env, js_constructible_class::TableMetadata>> {
+    let columns = columns_to_metadata(env, &table.columns)?;
+    build_table_metadata(
+        env,
+        FnArgs::from((
+            columns,
+            &table.partition_key,
+            &table.clustering_key,
+            table.partitioner.as_deref(),
+        )),
+    )
 }
 
 /// Converts the Rust driver's `Strategy` into one of the four JS classes declared in
@@ -180,6 +256,28 @@ fn convert_rust_strategy<'env>(
 
 #[napi]
 impl SessionWrapper {
+    /// Gets the definition of a table.
+    ///
+    /// The table is converted lazily and cached against its keyspace: repeated lookups for the
+    /// same table, whether through this method or through `KeyspaceWrapper::tables`, return the
+    /// same JS object.
+    #[napi(ts_return_type = "import('./lib/metadata/table-metadata').TableMetadata | null")]
+    pub fn get_table<'env>(
+        &self,
+        env: &'env Env,
+        keyspace: String,
+        table: String,
+    ) -> JsResult<Option<JsInstance<'env, js_constructible_class::TableMetadata>>> {
+        with_custom_error_sync(|| {
+            self.with_cluster_snapshot(env, |snapshot| {
+                let Some(ks) = snapshot.keyspace_wrapper(env, &keyspace)? else {
+                    return ConvertedResult::Ok(None);
+                };
+                ks.cached_table(env, &table)
+            })
+        })
+    }
+
     /// Returns metadata about the keyspace with the given name, or `null` if it does not exist.
     ///
     /// The keyspace is converted lazily and cached: repeated lookups for the same name
@@ -236,5 +334,47 @@ impl KeyspaceWrapper {
     #[napi(getter)]
     pub fn durable_writes(&self) -> bool {
         self.keyspace().durable_writes
+    }
+
+    /// Gets a single table of the keyspace by name.
+    #[napi(ts_return_type = "import('./lib/metadata/table-metadata').TableMetadata | null")]
+    pub fn get_table<'env>(
+        &self,
+        env: &'env Env,
+        name: String,
+    ) -> JsResult<Option<JsInstance<'env, js_constructible_class::TableMetadata>>> {
+        with_custom_error_sync(|| {
+            let table = self.cached_table(env, name.as_str())?;
+            ConvertedResult::Ok(table)
+        })
+    }
+
+    /// Tables in the keyspace, keyed by table name.
+    #[napi(
+        getter,
+        ts_return_type = "Readonly<Record<string, import('./lib/metadata/table-metadata').TableMetadata>>"
+    )]
+    pub fn tables<'env>(&self, env: &'env Env) -> JsResult<JsInstance<'env, TableRecord>> {
+        with_custom_error_sync(|| {
+            self.tables_record.get_or_init(env, || {
+                let tables = self.tables.get_or_init_all(env, || {
+                    self.keyspace()
+                        .tables
+                        .iter()
+                        .map(|(name, table)| Ok((name.clone(), convert_rust_table(env, table)?)))
+                        .collect::<ConvertedResult<
+                            HashMap<
+                                String,
+                                JsInstance<'env, js_constructible_class::TableMetadata>,
+                            >,
+                        >>()
+                })?;
+                let record: NamedMap<
+                    String,
+                    JsInstance<'env, js_constructible_class::TableMetadata>,
+                > = NamedMap::new(tables);
+                record.into_jsinstance(env).map_err(ConvertedError::from)
+            })
+        })
     }
 }

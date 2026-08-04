@@ -1,6 +1,7 @@
 "use strict";
 
-import { ColumnInfo } from "../types/cql-utils";
+import { ColumnInfo, convertComplexType } from "../types/cql-utils";
+import rust = require("../../index");
 
 /**
  * Some columns have a specific meaning in the context of a table,
@@ -26,23 +27,24 @@ class ColumnMetadata {
     /**
      * CQL type that the value stored in this column has.
      */
-    type: ColumnInfo;
+    readonly type: ColumnInfo;
 
     /**
      * Describes role of the column in the table.
      */
-    kind: ColumnKind;
+    readonly kind: ColumnKind;
 
     /**
      * Constructs a ColumnMetadata instance.
      *
+     * Instances of this class are constructed directly from the native code when reading cluster metadata.
      * @param {rust.ComplexType} typ CQL type of the column.
      * @param {ColumnKind} kind Role the column plays in the table.
      * @internal
      * @ignore
      */
-    constructor(typ: ColumnInfo, kind: ColumnKind) {
-        this.type = typ;
+    constructor(typ: rust.ComplexType, kind: ColumnKind) {
+        this.type = convertComplexType(typ);
         this.kind = kind;
     }
 }
@@ -57,28 +59,29 @@ class TableMetadata {
      *
      * This type does not contain information about the order of the columns in the table.
      */
-    columns: Record<string, ColumnMetadata>;
+    readonly columns: Readonly<Record<string, ColumnMetadata>>;
 
     /**
      * Names of the columns that constitute the partition key.
      * All names are guaranteed to be present in {@link columns}.
      */
-    partitionKey: string[];
+    readonly partitionKey: readonly string[];
 
     /**
      * Names of the columns that constitute the clustering key.
      * All names are guaranteed to be present in {@link columns}.
      */
-    clusteringKey: string[];
+    readonly clusteringKey: readonly string[];
 
     /**
      * Name of the partitioner used by the table, or null if not set.
      */
-    partitioner: string | null;
+    readonly partitioner: string | null;
 
     /**
      * Constructs a TableMetadata instance.
      *
+     * Instances of this class are constructed directly from the native code when reading cluster metadata.
      * @param {Record<string, ColumnMetadata>} columns Columns of the table, keyed by name.
      * @param {string[]} partitionKey Names of the partition key columns.
      * @param {string[]} clusteringKey Names of the clustering key columns.
@@ -100,3 +103,9 @@ class TableMetadata {
 }
 
 export { TableMetadata, ColumnMetadata, ColumnKind };
+
+// Registers the ColumnMetadata/TableMetadata constructors, so that Rust can construct
+// fully-formed instances directly when reading cluster metadata, instead of handing
+// JS a plain data object to convert.
+rust.registerColumnMetadataCtor(ColumnMetadata);
+rust.registerTableMetadataCtor(TableMetadata);

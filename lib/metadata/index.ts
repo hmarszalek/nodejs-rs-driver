@@ -200,7 +200,7 @@ class Metadata {
      * @returns {TableMetadata | null} The table metadata, or `null` if it does not exist.
      */
     getTable(keyspaceName: string, name: string): TableMetadata | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getTable(keyspaceName, name);
     }
 
     /**
