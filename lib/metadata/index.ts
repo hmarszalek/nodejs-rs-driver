@@ -22,10 +22,18 @@ import { SessionWrapper as RustClient } from "../../index";
 export { Aggregate } from "./aggregate";
 export { SchemaFunction } from "./schema-function";
 export { Index, IndexKind } from "./schema-index";
-export { KeyspaceMetadata, Strategy, StrategyKind } from "./keyspace-metadata";
 export { TableMetadata, ColumnMetadata, ColumnKind } from "./table-metadata";
 export { MaterializedView } from "./materialized-view";
 export { Udt, UdtField } from "./user-defined-type";
+export { KeyspaceMetadata } from "./keyspace-metadata";
+export type {
+    SimpleStrategy,
+    NetworkTopologyStrategy,
+    LocalStrategy,
+    OtherStrategy,
+    Strategy,
+} from "./strategy";
+export { StrategyKind } from "./strategy";
 export { ClientState };
 
 /**

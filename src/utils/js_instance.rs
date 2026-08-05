@@ -28,6 +28,12 @@ impl<'env, C> JsInstance<'env, C> {
         }
     }
 
+    /// Drops the static class tag, yielding the plain `Object` underneath. Needed where several
+    /// different `JsInstance` types have to be returned from one function.
+    pub(crate) fn into_object(self) -> Object<'env> {
+        self.object
+    }
+
     /// The raw `napi_env` this handle was created in.
     ///
     /// This is the only way to determine which N-API environment a `JsInstance` actually belongs

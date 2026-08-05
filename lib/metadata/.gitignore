@@ -7,6 +7,8 @@ materialized-view.js
 materialized-view.d.ts
 user-defined-type.js
 user-defined-type.d.ts
+strategy.js
+strategy.d.ts
 aggregate.js
 aggregate.d.ts
 schema-function.js

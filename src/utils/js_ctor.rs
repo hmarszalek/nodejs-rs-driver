@@ -16,6 +16,10 @@ pub mod js_constructible_class {
     pub enum TestJsClass {}
     pub enum SocketAddress {}
     pub enum Host {}
+    pub enum SimpleStrategy {}
+    pub enum NetworkTopologyStrategy {}
+    pub enum LocalStrategy {}
+    pub enum OtherStrategy {}
     pub enum HostMap {}
 }
 
@@ -42,6 +46,17 @@ pub(crate) type HostCtorArgs<'a> = FnArgs<(
 /// host's id.
 type HostMapCtorArgs<'a> =
     FnArgs<(NamedMap<String, JsInstance<'a, js_constructible_class::Host>>,)>;
+
+/// Arguments passed to `SimpleStrategy(replicationFactor)`.
+type SimpleStrategyCtorArgs = FnArgs<(u32,)>;
+
+/// Arguments passed to `NetworkTopologyStrategy(datacenterRepfactors)`, as an already-built
+/// `Record<string, number>` keyed by datacenter name.
+type NetworkTopologyStrategyCtorArgs<'a> = FnArgs<(NamedMap<&'a str, u32>,)>;
+
+/// Arguments passed to `OtherStrategy(name, data)`, where `data` is an already-built
+/// `Record<string, string>` of parameters the driver does not interpret.
+type OtherStrategyCtorArgs<'a> = FnArgs<(&'a str, NamedMap<&'a str, &'a str>)>;
 
 /// Defines a per-environment constructor registry for a single pure-JS class, together with:
 /// - a `#[napi]` `register_*_ctor` function that JS calls once per environment, at module load
@@ -170,6 +185,42 @@ define_js_ctor!(
     build_fn: build_socket_address,
     args: SocketAddressCtorArgs,
     class_name: SocketAddress,
+);
+
+define_js_ctor!(
+    /// `SimpleStrategy(replicationFactor)`.
+    static_name: SIMPLE_STRATEGY_CTOR,
+    register_fn: register_simple_strategy_ctor,
+    build_fn: build_simple_strategy,
+    args: SimpleStrategyCtorArgs,
+    class_name: SimpleStrategy,
+);
+
+define_js_ctor!(
+    /// `NetworkTopologyStrategy(datacenterRepfactors)`.
+    static_name: NETWORK_TOPOLOGY_STRATEGY_CTOR,
+    register_fn: register_network_topology_strategy_ctor,
+    build_fn: build_network_topology_strategy,
+    args: NetworkTopologyStrategyCtorArgs<'_>,
+    class_name: NetworkTopologyStrategy,
+);
+
+define_js_ctor!(
+    /// `LocalStrategy()`.
+    static_name: LOCAL_STRATEGY_CTOR,
+    register_fn: register_local_strategy_ctor,
+    build_fn: build_local_strategy,
+    args: (),
+    class_name: LocalStrategy,
+);
+
+define_js_ctor!(
+    /// `OtherStrategy(name, data)`.
+    static_name: OTHER_STRATEGY_CTOR,
+    register_fn: register_other_strategy_ctor,
+    build_fn: build_other_strategy,
+    args: OtherStrategyCtorArgs<'_>,
+    class_name: OtherStrategy,
 );
 
 define_js_ctor!(
