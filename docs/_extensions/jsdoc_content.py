@@ -32,6 +32,7 @@ Configuration in ``conf.py``::
     jsdoc_html_dir = "../../public/docs"   # relative to the Sphinx source dir
 """
 
+import json
 import posixpath
 import re
 from pathlib import Path
@@ -296,7 +297,50 @@ def _rewrite_links(html, current_docname, jsdoc_dir, use_dirhtml=True):
     return re.sub(r'href="([^"]*\.html(?:#[^"]*)?)"', _replace, html)
 
 
-def _convert_details_blocks(html, github_source_url=None):
+def load_line_table(table_path):
+    """Load the ``{compiled_file: {js_line: ts_line}}`` table.
+
+    Produced by ``_utils/line-table.js`` from the source maps the docs
+    build emits.  Returns *None* when absent or unreadable, which simply
+    means line numbers stay as JSDoc reported them.
+    """
+    try:
+        with open(table_path, encoding='utf-8') as handle:
+            table = json.load(handle)
+    except (OSError, ValueError):
+        return None
+    return table if isinstance(table, dict) else None
+
+
+def _map_to_tracked_source(file_path, line, source_root, line_table=None):
+    """Map a JSDoc source location back to the file tracked in git."""
+    if source_root is None or not file_path.endswith('.js'):
+        return file_path, line
+    ts_path = file_path[:-3] + '.ts'
+    try:
+        if not (Path(source_root) / ts_path).is_file():
+            return file_path, line
+    except OSError:
+        return file_path, line
+
+    if line is not None and line_table:
+        line_map = line_table.get(file_path)
+        if line_map:
+            # JSON object keys are strings.
+            mapped = line_map.get(str(line))
+            if mapped is None:
+                # Lines with no mapping of their own (e.g. a closing brace)
+                # belong to the statement that started above them.
+                earlier = [int(k) for k in line_map if int(k) <= line]
+                if earlier:
+                    mapped = line_map[str(max(earlier))]
+            if mapped is not None:
+                line = mapped
+    return ts_path, line
+
+
+def _convert_details_blocks(html, github_source_url=None, source_root=None,
+                            line_table=None):
     """Convert ``<dl class="details">`` entries to Sphinx admonitions.
 
     Transforms JSDoc Source and Deprecated entries from ``<dt>/<dd>``
@@ -315,14 +359,19 @@ def _convert_details_blocks(html, github_source_url=None):
             line_match = re.search(r'<a href="[^"]*#line(\d+)">', block)
             if not file_match:
                 continue
-            file_path = file_match.group(1).strip()
+            file_path, line_no = _map_to_tracked_source(
+                file_match.group(1).strip(),
+                int(line_match.group(1)) if line_match else None,
+                source_root,
+                line_table,
+            )
             link_text = file_path
-            if line_match:
-                link_text += f', line {line_match.group(1)}'
+            if line_no is not None:
+                link_text += f', line {line_no}'
             if github_source_url:
                 url = f"{github_source_url}/{file_path}"
-                if line_match:
-                    url += f"#L{line_match.group(1)}"
+                if line_no is not None:
+                    url += f"#L{line_no}"
                 admonitions.append(
                     f'<div class="admonition note">'
                     f'<p class="admonition-title">Source</p>'
@@ -367,7 +416,8 @@ def _convert_details_blocks(html, github_source_url=None):
     )
 
 
-def _strip_noise(html, github_source_url=None):
+def _strip_noise(html, github_source_url=None, source_root=None,
+                 line_table=None):
     """Clean up JSDoc HTML noise."""
     # JSDoc 4.0.4 emits an empty ``<a>`` after each type name in
     # ``Array.<number>``-style annotations (e.g.
@@ -380,7 +430,10 @@ def _strip_noise(html, github_source_url=None):
     )
     # Render ``Array.<number>`` (JSDoc) as ``Array<number>`` (TypeScript).
     html = html.replace('.&lt;', '&lt;')
-    html = _convert_details_blocks(html, github_source_url=github_source_url)
+    html = _convert_details_blocks(
+        html, github_source_url=github_source_url, source_root=source_root,
+        line_table=line_table,
+    )
     # Add Sphinx table classes so JSDoc tables match theme styling.
     html = re.sub(
         r'<table class="params">',
@@ -522,7 +575,8 @@ def _split_at_subsections(html):
 
 def extract_main_content(html_text, filename=None, current_docname=None,
                          jsdoc_dir=None, github_source_url=None,
-                         use_dirhtml=True):
+                         use_dirhtml=True, source_root=None,
+                         line_table=None):
     """Extract the ``<div id="main">…</div>`` from a JSDoc HTML page.
 
     Returns a dict with:
@@ -564,7 +618,9 @@ def extract_main_content(html_text, filename=None, current_docname=None,
         else:
             title = raw_title
 
-    content = _strip_noise(content, github_source_url=github_source_url)
+    content = _strip_noise(content, github_source_url=github_source_url,
+                           source_root=source_root,
+                           line_table=line_table)
 
     # Module pages: h1(stripped) → h3("Classes") should become h2 → shift -1
     # Class/interface/global pages: h2–h5 hierarchy is already correct → shift 0
@@ -583,7 +639,8 @@ def extract_main_content(html_text, filename=None, current_docname=None,
 
 
 def extract_events_content(html_text, current_docname=None, jsdoc_dir=None,
-                           github_source_url=None, use_dirhtml=True):
+                           github_source_url=None, use_dirhtml=True,
+                           source_root=None, line_table=None):
     """Extract the Events section from a JSDoc HTML page (e.g. Client.html)."""
     m = re.search(
         r'<h3 class="subsection-title">Events</h3>(.*?)(?=<h3 class="subsection-title"|</div>\s*<nav)',
@@ -600,7 +657,9 @@ def extract_events_content(html_text, current_docname=None, jsdoc_dir=None,
     # JSDoc page wrapper, not the events content.
     content = re.sub(r'(</article>\s*|</section>\s*)+$', '', content.rstrip())
 
-    content = _strip_noise(content, github_source_url=github_source_url)
+    content = _strip_noise(content, github_source_url=github_source_url,
+                           source_root=source_root,
+                           line_table=line_table)
 
     # Event names are h4 in JSDoc, should be h2 under the RST h1 title
     content = _shift_headings(content, -2)
@@ -643,13 +702,43 @@ class JsDocIncludeDirective(Directive):
         if repo:
             # Use SMV_CURRENT_VERSION (set by sphinx-multiversion) or
             # fall back to the configured default branch.
-            import os
-            branch = os.environ.get(
-                "SMV_CURRENT_VERSION",
-                getattr(config, "jsdoc_default_branch", "main"),
+            branch = (
+                getattr(config, "smv_current_version", "")
+                or getattr(config, "jsdoc_default_branch", "main")
             )
             github_source_url = (
                 f"https://github.com/{repo}/blob/{branch}/{source_path}"
+            )
+
+        # Filesystem location of the sources JSDoc was run against, used to
+        # map compiled ``.js`` build artifacts back to their ``.ts`` origin.
+        source_root = (
+            Path(env.srcdir)
+            / getattr(config, "jsdoc_repo_root", "../..")
+            / source_path
+        ).resolve()
+        if not source_root.is_dir():
+            logger.warning(
+                "jsdoc-include: source root not found: %s "
+                "(source links may point at build artifacts)",
+                source_root,
+            )
+            source_root = None
+
+        # Compiled-to-source line table built by ``_utils/sourcemaps.sh``,
+        # used to translate ``.js`` line numbers back to their ``.ts``
+        # originals.
+        table_path = (
+            Path(env.srcdir)
+            / getattr(config, "jsdoc_sourcemap_dir", "../_build/sourcemaps")
+            / "line-table.json"
+        ).resolve()
+        line_table = load_line_table(table_path)
+        if line_table is None:
+            logger.info(
+                "jsdoc-include: no line table at %s "
+                "(source links keep compiled line numbers)",
+                table_path,
             )
 
         # Collect categories from arguments and body
@@ -685,6 +774,8 @@ class JsDocIncludeDirective(Directive):
                         jsdoc_dir=jsdoc_dir,
                         github_source_url=github_source_url,
                         use_dirhtml=use_dirhtml,
+                        source_root=source_root,
+                        line_table=line_table,
                     )
                     if body is None:
                         logger.warning(
@@ -705,6 +796,8 @@ class JsDocIncludeDirective(Directive):
                     jsdoc_dir=jsdoc_dir,
                     github_source_url=github_source_url,
                     use_dirhtml=use_dirhtml,
+                    source_root=source_root,
+                    line_table=line_table,
                 )
                 if info is None:
                     logger.warning(
@@ -748,6 +841,8 @@ def setup(app):
     app.add_config_value("jsdoc_github_repository", "", "env")
     app.add_config_value("jsdoc_source_path", "lib", "env")
     app.add_config_value("jsdoc_default_branch", "main", "env")
+    app.add_config_value("jsdoc_repo_root", "../..", "env")
+    app.add_config_value("jsdoc_sourcemap_dir", "../_build/sourcemaps", "env")
     app.add_directive("jsdoc-include", JsDocIncludeDirective)
 
     return {
