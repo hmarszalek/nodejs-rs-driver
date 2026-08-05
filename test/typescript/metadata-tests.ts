@@ -26,7 +26,7 @@ async function myTest(): Promise<any> {
         "table1",
     );
 
-    const keyspaces: Map<string, KeyspaceMetadata> =
+    const keyspaces: Readonly<Record<string, KeyspaceMetadata>> =
         client.metadata.getKeyspaces();
     const keyspace: KeyspaceMetadata | null =
         client.metadata.getKeyspace("ks1");

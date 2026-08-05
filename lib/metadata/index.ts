@@ -13,7 +13,7 @@ import { ColumnInfo } from "../types/cql-utils";
 import { Udt } from "./user-defined-type";
 import { TableMetadata } from "./table-metadata";
 import { MaterializedView } from "./materialized-view";
-import { KeyspaceMetadata } from "./keyspace-metadata";
+import { KeyspaceMetadata } from "../../index";
 import { SchemaFunction } from "./schema-function";
 import { Aggregate } from "./aggregate";
 import ClientState = require("./client-state");
@@ -25,7 +25,7 @@ export { Index, IndexKind } from "./schema-index";
 export { TableMetadata, ColumnMetadata, ColumnKind } from "./table-metadata";
 export { MaterializedView } from "./materialized-view";
 export { Udt, UdtField } from "./user-defined-type";
-export { KeyspaceMetadata } from "./keyspace-metadata";
+export { KeyspaceMetadata } from "../../index";
 export type {
     SimpleStrategy,
     NetworkTopologyStrategy,
@@ -112,15 +112,15 @@ class Metadata {
      * @returns {KeyspaceMetadata | null} The keyspace metadata, or `null` if it does not exist.
      */
     getKeyspace(name: string): KeyspaceMetadata | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getKeyspaceMetadata(name);
     }
 
     /**
      * Gets all keyspace metadata.
-     * @returns {Map<string, KeyspaceMetadata>} A map of all keyspaces indexed by name.
+     * @returns {Readonly<Record<string, KeyspaceMetadata>>} Every keyspace, keyed by name.
      */
-    getKeyspaces(): Map<string, KeyspaceMetadata> {
-        throw new Error("TODO: Not implemented");
+    getKeyspaces(): Readonly<Record<string, KeyspaceMetadata>> {
+        return this.#rustClient.getAllKeyspaces();
     }
 
     /**
