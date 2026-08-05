@@ -250,6 +250,7 @@ class Metadata {
      * @param {types.consistencies} [consistency] The consistency level to obtain the trace.
      * @param {Function} [callback] Executes callback(err, result) when execution completed.
      * When not defined, the method will return a promise.
+     * @returns {Promise<QueryTrace> | void}
      */
     getTrace(traceId: types.Uuid): Promise<QueryTrace>;
     getTrace(
@@ -287,12 +288,13 @@ class Metadata {
      * one was provided.
      * @param {Uuid} traceId Identifier of the trace session.
      * @param {Number} [consistency] The consistency level to obtain the trace.
+     * @returns {Promise<QueryTrace>}
      */
     async #getTrace(
         traceId: types.Uuid,
         consistency: types.consistencies | undefined,
     ): Promise<QueryTrace> {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getTracingInfo(traceId.getBuffer());
     }
 
     /**

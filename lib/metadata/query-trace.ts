@@ -1,3 +1,4 @@
+import { registerQueryTraceCtor, registerTracingEventCtor } from "../../index";
 import InetAddress = require("../types/inet-address");
 // TODO: remove once `lib/types/time-uuid.js` is converted to typescript.
 // @ts-ignore
@@ -17,24 +18,27 @@ class TracingEvent {
     /**
      * Constructs a TracingEvent instance.
      *
-     * @param {Uuid} id
+     * Instances of this class are constructed directly from the native code when retrieving
+     * query tracing information, which passes the event id and the source address as their
+     * raw bytes.
+     * @param {Buffer} id
      * @param {string | null} activity
-     * @param {InetAddress | null} source
+     * @param {Buffer | null} source
      * @param {number | null} elapsed
      * @param {string | null} thread
      * @internal
      * @ignore
      */
     constructor(
-        id: TimeUuid,
+        id: Buffer,
         activity: string | null,
-        source: InetAddress | null,
+        source: Buffer | null,
         elapsed: number | null,
         thread: string | null,
     ) {
-        this.id = id;
+        this.id = TimeUuid.fromRust(id);
         this.activity = activity;
-        this.source = source;
+        this.source = source ? new InetAddress(source) : null;
         this.elapsed = elapsed;
         this.thread = thread;
     }
@@ -56,33 +60,44 @@ class QueryTrace {
     /**
      * Constructs a QueryTrace instance.
      *
+     * Instances of this class are constructed directly from the native code when retrieving
+     * query tracing information, which passes the addresses as their raw bytes and the start
+     * of the session as milliseconds since the Unix epoch.
      * @param {string | null} requestType
-     * @param {InetAddress | null} coordinator
+     * @param {Buffer | null} coordinator
      * @param {Record<string, string> | null} parameters
-     * @param {Date | null} startedAt
+     * @param {number | null} startedAt
      * @param {number | null} duration
-     * @param {InetAddress | null} clientAddress
+     * @param {Buffer | null} clientAddress
      * @param {TracingEvent[]} events
      * @internal
      * @ignore
      */
     constructor(
         requestType: string | null,
-        coordinator: InetAddress | null,
+        coordinator: Buffer | null,
         parameters: Record<string, string> | null,
-        startedAt: Date | null,
+        startedAt: number | null,
         duration: number | null,
-        clientAddress: InetAddress | null,
+        clientAddress: Buffer | null,
         events: TracingEvent[],
     ) {
         this.requestType = requestType;
-        this.coordinator = coordinator;
+        this.coordinator = coordinator ? new InetAddress(coordinator) : null;
         this.parameters = parameters || {};
-        this.startedAt = startedAt;
+        this.startedAt =
+            typeof startedAt === "number" ? new Date(startedAt) : null;
         this.duration = duration;
-        this.clientAddress = clientAddress;
+        this.clientAddress = clientAddress
+            ? new InetAddress(clientAddress)
+            : null;
         this.events = events;
     }
 }
 
 export { QueryTrace, TracingEvent };
+
+// Registers the QueryTrace/TracingEvent constructors, so that Rust can
+// construct fully-formed instances directly when retrieving query tracing information.
+registerTracingEventCtor(TracingEvent);
+registerQueryTraceCtor(QueryTrace);
