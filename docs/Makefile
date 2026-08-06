@@ -41,15 +41,11 @@ clean:
 	rm -rf $(SOURCEDIR)/api
 
 # Generate output commands
-.PHONY: jsdoc
-jsdoc:
-	cd .. && npm run js-doc
-	@echo
-	@echo "JSDoc build finished. The API docs are in ../public/docs/."
-
 .PHONY: api-pages
-api-pages: jsdoc
-	$(UV) run python _utils/generate_api_pages.py
+api-pages:
+	$(UV) run sh _utils/prebuild.sh ..
+	@echo
+	@echo "API pages generated. JSDoc output is in ../public/docs/."
 
 .PHONY: dirhtml
 dirhtml: setup api-pages
