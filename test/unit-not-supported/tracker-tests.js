@@ -28,7 +28,7 @@ describe("RequestLogger", () => {
             it("should include the query and parameters in the log message", () => {
                 const query = "INSERT EXAMPLE";
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     ["a", true, 1.01],
                     getExecutionOptions(false),
@@ -45,7 +45,7 @@ describe("RequestLogger", () => {
             it("should stringify object parameters in the log message", () => {
                 const query = "UPDATE EXAMPLE";
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     { a: 1, b: true, c: 1.01 },
                     getExecutionOptions(),
@@ -66,7 +66,7 @@ describe("RequestLogger", () => {
                     types.InetAddress.fromString("10.10.10.1"),
                 ];
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     params,
                     getExecutionOptions(true),
@@ -82,7 +82,7 @@ describe("RequestLogger", () => {
 
             it("should include size information and round to KB", () => {
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     "Q",
                     [],
                     getExecutionOptions(),
@@ -102,7 +102,7 @@ describe("RequestLogger", () => {
                     { query: "Q2", params: ["a", "b"] },
                 ];
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     queries,
                     null,
                     getExecutionOptions(),
@@ -127,7 +127,7 @@ describe("RequestLogger", () => {
                     { query: "INSERT3", params: ["a", "b"] },
                 ];
                 loggerShortMessage.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     queries,
                     null,
                     getExecutionOptions(),
@@ -145,7 +145,7 @@ describe("RequestLogger", () => {
                 const query =
                     "INSERT EXECUTE A B C this_should_not_be_included";
                 loggerShortMessage.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     ["a", true],
                     getExecutionOptions(true),
@@ -165,7 +165,7 @@ describe("RequestLogger", () => {
                 const query = "INSERT";
                 const params = ["abcdefghijk", 1];
                 loggerShortMessage.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     params,
                     getExecutionOptions(true),
@@ -181,7 +181,7 @@ describe("RequestLogger", () => {
                 const query = "INSERT SAMPLE";
                 const params = ["abcde", true, 1];
                 loggerShortMessage.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     params,
                     getExecutionOptions(true),
@@ -204,7 +204,7 @@ describe("RequestLogger", () => {
             it("should include the query and parameters in the log message", () => {
                 const query = "INSERT EXAMPLE";
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     ["a", true, 1.01],
                     getExecutionOptions(false),
@@ -221,7 +221,7 @@ describe("RequestLogger", () => {
             it("should not include query preparation info when has been prepared", () => {
                 const query = "UPDATE EXAMPLE";
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     [],
                     getExecutionOptions(true),
@@ -258,7 +258,7 @@ describe("RequestLogger", () => {
 
             it("should not log normal requests by default", () => {
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     "QUERY",
                     [],
                     getExecutionOptions(),
@@ -275,7 +275,7 @@ describe("RequestLogger", () => {
                 logger.logNormalRequests = true;
                 const query = "SELECT EXAMPLE";
                 logger.onSuccess(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     query,
                     [],
                     getExecutionOptions(),
@@ -312,7 +312,7 @@ describe("RequestLogger", () => {
             it("should include stack trace when large request failed", () => {
                 const err = new Error("Sample error");
                 logger.onError(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     "Q",
                     [1, 2, "a"],
                     getExecutionOptions(),
@@ -335,7 +335,7 @@ describe("RequestLogger", () => {
             it("should include stack trace when large request failed", () => {
                 const err = new Error("Sample error");
                 logger.onError(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     "Q",
                     [1, 2, "a"],
                     getExecutionOptions(),
@@ -351,7 +351,7 @@ describe("RequestLogger", () => {
             it("should allow to be disabled using logErroredRequests property", () => {
                 const err = new Error("Sample error");
                 logger.onError(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     "Q",
                     [1, 2, "a"],
                     getExecutionOptions(),
@@ -365,7 +365,7 @@ describe("RequestLogger", () => {
                 logger.logErroredRequests = false;
                 errorMessage = null;
                 logger.onError(
-                    { address: "::1" },
+                    { address: "::1", addressToString: () => "::1" },
                     "Q",
                     [1, 2, "a"],
                     getExecutionOptions(),

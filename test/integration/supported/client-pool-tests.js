@@ -109,7 +109,7 @@ describe("Client", function () {
                 assert.ifError(err);
                 assert.strictEqual(client.hosts.length, 3);
                 client.hosts.forEach(function (h) {
-                    assert.notEqual(h.address, "localhost");
+                    assert.notEqual(h.addressToString(), "localhost");
                 });
                 done();
             });
@@ -285,7 +285,7 @@ describe("Client", function () {
                             assert.strictEqual(
                                 host.pool.connections.length,
                                 3,
-                                "For host " + host.address,
+                                "For host " + host.addressToString(),
                             );
                             /* assert.strictEqual(
                                 state.getOpenConnections(host),
@@ -302,7 +302,7 @@ describe("Client", function () {
         it("should only warmup connections for hosts with local distance", async () => {
             const lbPolicy = new RoundRobinPolicy();
             lbPolicy.getDistance = function (host) {
-                const id = helper.lastOctetOf(host.address);
+                const id = helper.lastOctetOf(host.addressToString());
                 if (id === "1") {
                     return types.distance.local;
                 } else if (id === "2") {
