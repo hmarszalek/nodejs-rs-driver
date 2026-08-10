@@ -7,3 +7,5 @@ new-utils.js
 new-utils.d.ts
 errors.js
 errors.d.ts
+host.js
+host.d.ts

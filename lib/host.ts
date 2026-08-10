@@ -1,19 +1,16 @@
-// @ts-nocheck
 "use strict";
 
-const events = require("events");
-const _nodeNet = require("node:net");
+import events = require("events");
+import net = require("node:net");
 
-const { throwNotSupported } = require("./new-utils");
-const Uuid = require("./types/uuid");
-const _rust = require("../index");
+import { Token } from "./token";
+import Uuid = require("./types/uuid");
+import rust = require("../index");
 
 /**
  * Returns the string representation of a given socket address.
- * @param {_nodeNet.SocketAddress} address
- * @returns {String}
  */
-function socketAddressToString(address) {
+function socketAddressToString(address: net.SocketAddress): string {
     return address.family === "ipv6"
         ? `[${address.address}]:${address.port}`
         : `${address.address}:${address.port}`;
@@ -21,10 +18,8 @@ function socketAddressToString(address) {
 
 /**
  * Derives the hex string representation of a host id from a host id's raw bytes.
- * @param {Buffer} buffer
- * @returns {String}
  */
-function hostIdToString(buffer) {
+function hostIdToString(buffer: Buffer): string {
     return buffer.toString("hex");
 }
 
@@ -34,90 +29,67 @@ function hostIdToString(buffer) {
  */
 class Host extends events.EventEmitter {
     /**
+     * Gets the ip address and port number of the node.
+     *
+     * Use {@link Host#addressToString} to get the conventional `ip:port` string form.
+     */
+    address: net.SocketAddress;
+
+    /**
+     * Gets string containing the Cassandra version.
+     */
+    cassandraVersion: string | null;
+
+    /**
+     * Gets data center name of the node.
+     */
+    datacenter: string | null;
+
+    /**
+     * Gets rack name of the node.
+     */
+    rack: string | null;
+
+    /**
+     * Gets the tokens assigned to the node.
+     */
+    tokens: string[];
+
+    /**
+     * Gets the id of the host.
+     *
+     * This identifier is used by the server for internal communication / gossip.
+     */
+    hostId: Uuid;
+
+    /**
      * Creates a new Host instance.
      *
      * Instances of this class are constructed directly from the native code when reading cluster metadata.
-     * @param {_nodeNet.SocketAddress} address
-     * @param {String|null} datacenter
-     * @param {String|null} rack
-     * @param {Buffer} hostId
      * @internal
      * @ignore
      */
-    constructor(address, datacenter, rack, hostId) {
+    constructor(
+        address: net.SocketAddress,
+        datacenter: string | null,
+        rack: string | null,
+        hostId: Buffer,
+    ) {
         super();
-        /**
-         * Gets the ip address and port number of the node.
-         *
-         * Use {@link Host#toString} to get the conventional `ip:port` string form.
-         * @type {_nodeNet.SocketAddress}
-         */
         this.address = address;
-
-        /**
-         * Gets string containing the Cassandra version.
-         * @type {String}
-         */
         this.cassandraVersion = null;
-
-        /**
-         * Gets data center name of the node.
-         * @type {String}
-         */
         this.datacenter = datacenter;
-
-        /**
-         * Gets rack name of the node.
-         * @type {String}
-         */
         this.rack = rack;
-
-        /**
-         * Gets the tokens assigned to the node.
-         * @type {Array<any>}
-         */
-        this.tokens = null;
-
-        /**
-         * Gets the id of the host.
-         *
-         * This identifier is used by the server for internal communication / gossip.
-         * @type {Uuid}
-         */
+        this.tokens = [];
         this.hostId = Uuid.fromRust(hostId);
-    }
-
-    /**
-     * @deprecated Not supported by the driver. Usage will throw an error.
-     */
-    get dseVersion() {
-        throwNotSupported("Host.dseVersion");
-        return null;
-    }
-
-    set dseVersion(_) {
-        throwNotSupported("Host.dseVersion");
-    }
-
-    /**
-     * @deprecated Not supported by the driver. Usage will throw an error.
-     */
-    get workloads() {
-        throwNotSupported("Host.workloads");
-        return null;
-    }
-
-    set workloads(_) {
-        throwNotSupported("Host.workloads");
     }
 
     /**
      * This endpoint is not yet implemented, and its usage will throw an error
      *
      * Determines if the node is UP now (seen as UP by the driver).
-     * @returns {boolean}
      */
-    isUp() {
+    isUp(): boolean {
         throw new Error(`TODO: Not implemented`);
     }
 
@@ -126,9 +98,8 @@ class Host extends events.EventEmitter {
      *
      * Determines if the host can be considered as UP.
      * Deprecated: Use {@link Host#isUp()} instead.
-     * @returns {boolean}
      */
-    canBeConsideredAsUp() {
+    canBeConsideredAsUp(): boolean {
         throw new Error(`TODO: Not implemented`);
     }
 
@@ -137,9 +108,8 @@ class Host extends events.EventEmitter {
      *
      * Returns an array containing the Cassandra Version as an Array of Numbers having the major version in the first
      * position.
-     * @returns {Array.<Number>}
      */
-    getCassandraVersion() {
+    getCassandraVersion(): number[] {
         // We never set the version when creating object from Rust,
         // so we will explicitly throw an error, when someone attempts to get the version
         // to avoid any confusion
@@ -154,18 +124,11 @@ class Host extends events.EventEmitter {
     }
 
     /**
-     * @deprecated Not supported by the driver. Usage will throw an error.
-     */
-    getDseVersion() {
-        throwNotSupported("Host.getDseVersion");
-    }
-
-    /**
      * Returns the string representation of the host's address.
      * @internal
      * @ignore
      */
-    addressToString() {
+    addressToString(): string {
         return socketAddressToString(this.address);
     }
 }
@@ -177,9 +140,12 @@ class Host extends events.EventEmitter {
  * @extends events.EventEmitter
  */
 class HostMap extends events.EventEmitter {
-    #hostsById;
-    #idByIp;
-    #values;
+    #hostsById: Record<string, Host>;
+    #idByIp: Map<string, string>;
+    #values: readonly Host[] | null;
+
+    /** Number of hosts in the map. */
+    length!: number;
 
     /**
      * Creates a new HostMap instance.
@@ -188,11 +154,10 @@ class HostMap extends events.EventEmitter {
      * metadata, which passes an already-built `Record` of {@link Host} instances keyed by the
      * hex-encoded bytes of their host id, built directly on the Rust side - so this constructor
      * doesn't need to convert an intermediate array into a lookup structure itself.
-     * @param {Object.<String, Host>} items
      * @internal
      * @ignore
      */
-    constructor(items) {
+    constructor(items: Record<string, Host>) {
         super();
 
         // Host instances keyed by the hex-encoded bytes of their host id, handed over
@@ -223,9 +188,8 @@ class HostMap extends events.EventEmitter {
 
     /**
      * Executes a provided function once per map element.
-     * @param callback
      */
-    forEach(callback) {
+    forEach(callback: (value: Host, key: Uuid) => void): void {
         for (const host of Object.values(this.#hostsById)) {
             callback(host, host.hostId);
         }
@@ -233,58 +197,36 @@ class HostMap extends events.EventEmitter {
 
     /**
      * Gets a {@link Host host} by key or undefined if not found.
-     * @param {Uuid | Buffer | _nodeNet.SocketAddress | String} key
-     * @returns {Host}
      */
-    get(key) {
+    get(key: Uuid | Buffer | net.SocketAddress | string): Host | undefined {
+        let itemKey: string | undefined;
         if (key instanceof Uuid) {
-            key = hostIdToString(key.buffer);
+            itemKey = hostIdToString(key.buffer);
         } else if (key instanceof Buffer) {
-            key = hostIdToString(key);
+            itemKey = hostIdToString(key);
         } else {
             // Not a host id - try resolving it as an address instead.
-            if (key instanceof _nodeNet.SocketAddress) {
-                key = socketAddressToString(key);
-            }
-            key = this.#idByIp.get(key);
+            const addressKey = key as net.SocketAddress | string;
+            const ipKey =
+                addressKey instanceof net.SocketAddress
+                    ? socketAddressToString(addressKey)
+                    : addressKey;
+            itemKey = this.#idByIp.get(ipKey);
         }
-        return key === undefined ? undefined : this.#hostsById[key];
+        return itemKey === undefined ? undefined : this.#hostsById[itemKey];
     }
 
     /**
      * Returns an array of host ids.
-     * @returns {Array<Uuid>}
      */
-    keys() {
+    keys(): Uuid[] {
         return Object.values(this.#hostsById).map((host) => host.hostId);
     }
 
     /**
-     * @deprecated Not supported by the driver. Usage will throw an error.
-     */
-    remove() {
-        throwNotSupported("HostMap.remove");
-    }
-
-    /**
-     * @deprecated Not supported by the driver. Usage will throw an error.
-     */
-    removeMultiple() {
-        throwNotSupported("HostMap.removeMultiple");
-    }
-
-    /**
-     * @deprecated Not supported by the driver. Usage will throw an error.
-     */
-    set() {
-        throwNotSupported("HostMap.set");
-    }
-
-    /**
      * Returns a shallow copy of the values of the map.
-     * @returns {Array.<Host>}
      */
-    values() {
+    values(): readonly Host[] {
         if (!this.#values) {
             // Cache the values
             this.#values = Object.freeze(Object.values(this.#hostsById));
@@ -293,32 +235,25 @@ class HostMap extends events.EventEmitter {
         return this.#values;
     }
 
-    /**
-     * @deprecated Not supported by the driver. Usage will throw an error.
-     */
-    clear() {
-        throwNotSupported("HostMap.clear");
-    }
-
-    inspect() {
+    inspect(): Readonly<Record<string, Host>> {
         return this.#hostsById;
     }
 
-    toJSON() {
+    toJSON(): Record<string, Host> {
         return Object.fromEntries(
-            Object.values(this.#hostsById).map((host) => [host.hostId, host]),
+            Object.values(this.#hostsById).map((host) => [
+                host.hostId.toString(),
+                host,
+            ]),
         );
     }
 }
 
-module.exports = {
-    Host,
-    HostMap,
-};
+export { Host, HostMap };
 
 // Registers the Host and HostMap constructors, so that Rust can construct fully-formed
 // instances directly when reading cluster metadata.
 // `net.SocketAddress` is registered too, since Rust builds each host's address with it.
-_rust.registerSocketAddressCtor(_nodeNet.SocketAddress);
-_rust.registerHostCtor(Host);
-_rust.registerHostMapCtor(HostMap);
+rust.registerSocketAddressCtor(net.SocketAddress as unknown as () => void);
+rust.registerHostCtor(Host as unknown as () => void);
+rust.registerHostMapCtor(HostMap as unknown as () => void);
