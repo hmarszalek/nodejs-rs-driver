@@ -13,7 +13,9 @@ use openssl::x509::X509;
 use openssl::x509::store::X509StoreBuilder;
 use scylla::client::SelfIdentity;
 use scylla::client::execution_profile::ExecutionProfileBuilder;
-use scylla::client::session_builder::SessionBuilder;
+use scylla::client::session_builder::{
+    GenericSessionBuilder, SessionBuilder, SessionBuilderKindSupportsKnownNodes,
+};
 use scylla::policies::host_filter::AllowListHostFilter;
 use scylla::policies::load_balancing::{self, LoadBalancingPolicy};
 use scylla::policies::retry::{DefaultRetryPolicy, FallthroughRetryPolicy, RetryPolicy};
@@ -268,11 +270,15 @@ fn configure_ssl(options: &SslOptions) -> ConvertedResult<Option<SslContext>> {
     Ok(Some(ssl_context_builder.build()))
 }
 
-pub(crate) fn configure_session_builder(
-    options: SessionOptions,
-) -> ConvertedResult<SessionBuilder> {
-    let mut builder = SessionBuilder::new();
-    builder = builder.custom_identity(self_identity(&options));
+/// Applies every option that is meaningful for any kind of session builder.
+///
+/// The rust driver exposes some options only on specific builder kinds, so those
+/// are applied by the caller instead.
+fn apply_common_options<K: SessionBuilderKindSupportsKnownNodes>(
+    mut builder: GenericSessionBuilder<K>,
+    options: &SessionOptions,
+) -> ConvertedResult<GenericSessionBuilder<K>> {
+    builder = builder.custom_identity(self_identity(options));
     builder = builder.known_nodes(options.connect_points.as_deref().unwrap_or(&[]));
     if let Some(keyspace) = &options.keyspace {
         builder = builder.use_keyspace(keyspace, false);
@@ -290,10 +296,6 @@ pub(crate) fn configure_session_builder(
                 "There is a check in JS Client constructor that should have prevented only one credential passed"
             )
         }
-    }
-
-    if let Some(ssl_options) = &options.ssl_options {
-        builder = builder.tls_context(configure_ssl(ssl_options)?);
     }
 
     if let Some(allow_list) = options
@@ -320,6 +322,19 @@ pub(crate) fn configure_session_builder(
         exec_profile_builder = exec_profile_builder.retry_policy(policy);
     }
 
+    builder = builder.default_execution_profile_handle(exec_profile_builder.build().into_handle());
+    Ok(builder)
+}
+
+pub(crate) fn configure_session_builder(
+    options: SessionOptions,
+) -> ConvertedResult<SessionBuilder> {
+    let mut builder = apply_common_options(SessionBuilder::new(), &options)?;
+
+    if let Some(ssl_options) = &options.ssl_options {
+        builder = builder.tls_context(configure_ssl(ssl_options)?);
+    }
+
     if let Some(address_translator_config) = options.address_translator_config
         && let Some(address_mapping) = address_translator_config.address_mapping
     {
@@ -331,7 +346,6 @@ pub(crate) fn configure_session_builder(
         builder = builder.address_translator(Arc::new(address_mapping));
     }
 
-    builder = builder.default_execution_profile_handle(exec_profile_builder.build().into_handle());
     Ok(builder)
 }
 
