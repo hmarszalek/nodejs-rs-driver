@@ -768,8 +768,8 @@ const helper = {
     createKeyspaceCql: function (keyspace, replicationFactor, durableWrites) {
         return util.format(
             "CREATE KEYSPACE %s" +
-                " WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : %d}" +
-                " AND durable_writes = %s;",
+                " WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor' : %d}" +
+                " AND durable_writes = %s",
             keyspace,
             replicationFactor || 1,
             !!durableWrites,
@@ -1005,7 +1005,7 @@ const helper = {
             isScylla: isScylla,
             version:
                 process.env["CCM_VERSION"] ||
-                (isScylla ? "release:2025.3" : "3.11.4"),
+                (isScylla ? "release:2026.2.2" : "3.11.4"),
         };
     },
 

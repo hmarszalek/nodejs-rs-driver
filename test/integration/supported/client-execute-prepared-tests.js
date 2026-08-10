@@ -2279,7 +2279,11 @@ describe("Client @SERVER_API", function () {
             const keyspace = "ks_view_prepared";
             before(function createTables(done) {
                 const queries = [
-                    "CREATE KEYSPACE ks_view_prepared WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1}",
+                    // This test has hardcoded assumptions about which node will coordinate a request based on token-aware routing, so tablets must stay disabled.
+                    helper.keyspaceDefinitionWithTabletsDisabled(
+                        setupInfo.client,
+                        "CREATE KEYSPACE ks_view_prepared WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor' : 1}",
+                    ),
                     "CREATE TABLE ks_view_prepared.scores (user TEXT, game TEXT, year INT, month INT, day INT, score INT, PRIMARY KEY (user, game, year, month, day))",
                     "CREATE MATERIALIZED VIEW ks_view_prepared.alltimehigh AS SELECT * FROM scores WHERE game IS NOT NULL AND year IS NOT NULL AND month IS NOT NULL AND day IS NOT NULL AND score IS NOT NULL AND user IS NOT NULL PRIMARY KEY (game, score, year, month, day, user) WITH CLUSTERING ORDER BY (score DESC, year DESC, month DESC, day DESC, user DESC)",
                 ];
