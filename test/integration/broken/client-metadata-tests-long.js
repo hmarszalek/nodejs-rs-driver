@@ -188,7 +188,7 @@ describe("Client", function () {
                     client
                         .execute(
                             "CREATE KEYSPACE ks_rs_is_schema_in_agreement" +
-                                " WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1}",
+                                " WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor' : 1}",
                         )
                         .then((rs) =>
                             assert.strictEqual(
@@ -204,7 +204,7 @@ describe("Client", function () {
                 it("should return false after executing DDL queries", (done) => {
                     const createQuery =
                         "CREATE KEYSPACE ks_meta_check_agreement" +
-                        " WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1}";
+                        " WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor' : 1}";
 
                     utils.series(
                         [

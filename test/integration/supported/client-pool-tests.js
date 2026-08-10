@@ -676,11 +676,11 @@ describe("Client", function () {
 
         it("should wait for schema agreement before calling back", function (done) {
             const queries = [
-                "CREATE KEYSPACE ks1 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};",
+                "CREATE KEYSPACE ks1 WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor' : 3};",
                 "CREATE TABLE ks1.tbl1 (id uuid PRIMARY KEY, value text)",
                 "SELECT * FROM ks1.tbl1",
                 "SELECT * FROM ks1.tbl1 where id = d54cb06d-d168-45a0-b1b2-9f5c75435d3d",
-                "CREATE KEYSPACE ks2 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3};",
+                "CREATE KEYSPACE ks2 WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor' : 3};",
                 "CREATE TABLE ks2.tbl2 (id uuid PRIMARY KEY, value text)",
                 "SELECT * FROM ks2.tbl2",
                 "SELECT * FROM ks2.tbl2",

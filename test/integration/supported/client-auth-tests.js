@@ -13,7 +13,12 @@ describe("Client", function () {
         helper.setup(1, {
             initClient: false,
             ccmOptions: {
-                yaml: ["authenticator:PasswordAuthenticator"],
+                yaml: [
+                    "authenticator:PasswordAuthenticator",
+                    "authorizer:CassandraAuthorizer",
+                    "auth_superuser_name:cassandra",
+                    "auth_superuser_salted_password:$6$x7IFjiX5VCpvNiFk$2IfjTvSyGL7zerpV.wbY7mJjaRCrJ/68dtT3UpT.sSmNYz1bPjtn3mH.kJKFvaZ2T4SbVeBijjmwGjcb83LlV/",
+                ],
                 jvmArgs: ["-Dcassandra.superuser_setup_delay_ms=0"],
             },
         });

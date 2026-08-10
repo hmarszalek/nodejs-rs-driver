@@ -90,7 +90,6 @@ context("with a reusable 3 node cluster", function () {
     before(function (done) {
         utils.eachSeries(
             [
-                "CREATE KEYSPACE ks_simple_rp1 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1}",
                 // In the tests, we have some hardcoded assumptions, which nodes will be contacted (by usage of token aware policy).
                 // Those nodes are determined based on how Vnodes work - meaning that when testing on scylla, we need to disable tablets,
                 // which otherwise break the assumptions about which nodes to expect as part of the request coordinator.
@@ -102,12 +101,11 @@ context("with a reusable 3 node cluster", function () {
                     client,
                     "CREATE KEYSPACE ks_network_rp2 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : 2}",
                 ),
-                "CREATE TABLE ks_simple_rp1.table_a (id int primary key, name int)",
                 "CREATE TABLE ks_network_rp1.table_b (id int primary key, name int)",
                 "CREATE TABLE ks_network_rp2.table_c (id int primary key, name int)",
                 "CREATE TABLE ks_network_rp2.table_composite (id1 text, id2 text, primary key ((id1, id2)))",
                 // Try to prevent consistency issues in the query trace
-                "ALTER KEYSPACE system_traces WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}",
+                "ALTER KEYSPACE system_traces WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1'}",
             ],
             function (q, next) {
                 client.execute(q, next);
@@ -149,9 +147,6 @@ context("with a reusable 3 node cluster", function () {
         it("should target the correct replica for partition with logged keyspace", function (done) {
             utils.series(
                 [
-                    function testCaseWithSimpleStrategy(next) {
-                        testNoHops("ks_simple_rp1", "table_a", 1, next);
-                    },
                     function testCaseWithNetworkStrategy(next) {
                         testNoHops("ks_network_rp1", "table_b", 1, next);
                     },
@@ -163,7 +158,7 @@ context("with a reusable 3 node cluster", function () {
             );
         });
         it("should target the correct partition on a different keyspace", function (done) {
-            testNoHops("ks_simple_rp1", "ks_network_rp2.table_c", 2, done);
+            testNoHops("ks_network_rp1", "ks_network_rp2.table_c", 2, done);
         });
         it("should target correct replica for composite routing key", function (done) {
             const client = new Client({
@@ -223,7 +218,7 @@ context("with a reusable 3 node cluster", function () {
         });
         it("should balance between replicas on a different keyspace", function (done) {
             testAllReplicasAreUsedAsCoordinator(
-                "ks_simple_rp1",
+                "ks_network_rp1",
                 "ks_network_rp2.table_c",
                 2,
                 done,
@@ -345,7 +340,7 @@ context("with a reusable 3 node cluster", function () {
                 done,
             );
         });
-       
+
         it("should throw TypeError if invalid routingKey type is provided", function (done) {
             const client = new Client({
                 policies: {
