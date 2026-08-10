@@ -151,7 +151,9 @@ describe("Client", function () {
                 assert.ifError(err);
                 // the 3 original hosts
                 assert.strictEqual(client.hosts.length, 3);
-                const hosts = client.hosts.keys();
+                const hosts = client.hosts
+                    .values()
+                    .map((h) => h.addressToString());
 
                 // Hosts can be arranged in any order.
                 expect(hosts).to.include(contactPoints[0] + ":9042");
@@ -1196,8 +1198,9 @@ function newInstance(options) {
  */
 function getPoolInfo(client) {
     const info = {};
-    client.hosts.forEach(function (h, address) {
-        info[helper.lastOctetOf(address)] = h.pool.connections.length;
+    client.hosts.forEach(function (h) {
+        info[helper.lastOctetOf(h.addressToString())] =
+            h.pool.connections.length;
     });
     return info;
 }
