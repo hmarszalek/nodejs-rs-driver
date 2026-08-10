@@ -1,6 +1,7 @@
 import * as events from "events";
 import * as tls from "tls";
 import { URL } from "url";
+import net = require("node:net");
 import * as auth from "./lib/auth";
 import * as policies from "./lib/policies";
 import * as types from "./lib/types";
@@ -158,18 +159,18 @@ export interface HostMap extends events.EventEmitter {
 
   forEach(callback: (value: Host, key: string) => void): void;
 
-  get(key: string): Host;
+  get(key: string): Host | undefined;
 
-  keys(): string[];
+  keys(): Uuid[];
 
   values(): Host[];
 }
 
 export interface Host extends events.EventEmitter {
-  address: string;
-  cassandraVersion: string;
-  datacenter: string;
-  rack: string;
+  address: net.SocketAddress;
+  cassandraVersion: string | null;
+  datacenter: string | null;
+  rack: string | null;
   tokens: string[];
   hostId: types.Uuid;
 
