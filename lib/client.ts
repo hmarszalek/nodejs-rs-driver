@@ -203,7 +203,7 @@ class Client extends events.EventEmitter {
      * Gets an associative array of cluster hosts.
      */
     get hosts(): HostMap {
-        if (!this.rustClient) return new HostMap([]);
+        if (!this.rustClient) return new HostMap({});
 
         // rustClient.getAllHosts() attempts to read the cached HostMap from the Rust driver.
         // If no cache is available, or the previous cache is stale, it will trigger a refresh

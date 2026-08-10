@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
@@ -14,7 +15,7 @@ use crate::utils::js_ctor::{
 };
 use crate::utils::js_instance::JsInstance;
 use crate::utils::napi_ref::NapiRef;
-use crate::utils::to_napi_obj::CopyableBuffer;
+use crate::utils::to_napi_obj::{CopyableBuffer, NamedMap};
 
 /// Builds a JS `Host` object for every node known via `cluster_state` and collects them into a
 /// single JS `HostMap`, pinning only that map with a `NapiRef`.
@@ -27,13 +28,18 @@ pub(crate) fn cache_host_map(
     cluster_state: &ClusterState,
     env: &Env,
 ) -> napi::Result<NapiRef<js_constructible_class::HostMap>> {
-    let hosts = cluster_state
+    let entries = cluster_state
         .get_nodes_info()
         .iter()
-        .map(|node| build_host(env, host_ctor_args(node, env)?))
-        .collect::<napi::Result<Vec<_>>>()?;
+        .map(|node| {
+            let host = build_host(env, host_ctor_args(node, env)?)?;
+            let key = node.host_id.simple().to_string();
+            Ok((key, host))
+        })
+        .collect::<napi::Result<HashMap<_, _>>>()?;
 
-    let host_map = build_host_map(env, FnArgs::from((hosts,)))?;
+    let items = NamedMap::new(entries);
+    let host_map = build_host_map(env, FnArgs::from((items,)))?;
     NapiRef::new(env, host_map)
 }
 

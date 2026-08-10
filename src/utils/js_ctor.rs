@@ -7,7 +7,7 @@ use std::sync::Mutex;
 
 use crate::types::type_helpers::SocketAddrWrapper;
 use crate::utils::js_instance::JsInstance;
-use crate::utils::to_napi_obj::CopyableBuffer;
+use crate::utils::to_napi_obj::{CopyableBuffer, NamedMap};
 
 /// Zero-sized marker types naming each JS class that Rust constructs directly.
 /// They exist only to parametrize `JsInstance` and, in turn, `NapiRef`.
@@ -36,10 +36,12 @@ pub(crate) type HostCtorArgs<'a> = FnArgs<(
     CopyableBuffer<'a>,
 )>;
 
-/// Arguments passed to `HostMap(hosts)`.
+/// Arguments passed to `HostMap(items)`.
 ///
-/// `hosts` is an array of already-built `Host` instances.
-type HostMapCtorArgs<'a> = FnArgs<(Vec<JsInstance<'a, js_constructible_class::Host>>,)>;
+/// `items` is an already-built `Record<string, Host>`, keyed by the hex-encoded bytes of each
+/// host's id.
+type HostMapCtorArgs<'a> =
+    FnArgs<(NamedMap<String, JsInstance<'a, js_constructible_class::Host>>,)>;
 
 /// Defines a per-environment constructor registry for a single pure-JS class, together with:
 /// - a `#[napi]` `register_*_ctor` function that JS calls once per environment, at module load
@@ -177,8 +179,8 @@ define_js_ctor!(
 );
 
 define_js_ctor!(
-    /// `HostMap(hosts)`
-    /// `hosts` is an array of `Host` instances, keyed by `host.address` by the constructor
+    /// `HostMap(items)`
+    /// `items` is an already-built `Map<string, Host>`.
     static_name: HOST_MAP_CTOR,
     register_fn: register_host_map_ctor,
     build_fn: build_host_map,
