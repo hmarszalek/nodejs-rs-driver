@@ -200,6 +200,44 @@ when using `client.hosts.keys()` - see issue [#282](https://github.com/scylladb/
 (they were checked in the driver tests). Those assumptions no longer hold true,
 the hosts returned from `client.hosts.keys()` may be in a random order, that may vary from run to run.
 
+#### `Host.address` is now a `net.SocketAddress`
+
+In the `cassandra-driver`, `host.address` was a plain string in the `ip:port` format.
+In the ScyllaDB Node.js RS Driver, it is a real
+[`net.SocketAddress`](https://nodejs.org/api/net.html#class-netsocketaddress) object.
+
+#### `HostMap` is now keyed by host id, not address
+
+In the `cassandra-driver`, `HostMap` was keyed by a host's address. In the ScyllaDB Node.js RS
+Driver, it is keyed by the host's `Uuid` instead, since a host's id never changes, while its
+address can (a node can be assigned a new address, or a given address can later be reused by a
+different node).
+
+This affects:
+
+- `client.hosts.keys()`: now returns an array of `Uuid`, not addresses.
+- `client.hosts.forEach((host, key) => ...)`: `key` is now a `Uuid`, not an address.
+
+`client.hosts.get(key)` is unaffected for existing callers: it still accepts an address
+(`net.SocketAddress` or the `ip:port` string), and now also accepts a `Uuid` or the host id as a
+raw `Buffer`.
+
+#### Removed `Host`/`HostMap` members
+
+`Host`:
+
+- `dseVersion` (getter/setter) and `getDseVersion()`: specific to DataStax Enterprise (DSE). This driver targets
+  open-source Cassandra and ScyllaDB clusters, which have no DSE version to report.
+- `workloads` (getter/setter): also DSE-specific (e.g. the Search/Analytics/Graph workloads DSE
+  assigns to nodes); not applicable outside DSE.
+
+`HostMap`:
+
+- `remove()` / `removeMultiple()` / `set()` / `clear()`: `HostMap` is a read-only snapshot of the cluster's current
+  topology, built and owned by the driver - hosts cannot be removed or added to it directly and it cannot be cleared.
+
+If your code called any of these, remove the call, as there is no plan to support them in the future.
+
 ## Logging
 
 See the [Logging](../logging/logging.md) page for the full documentation of the new logging system.

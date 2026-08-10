@@ -5,17 +5,43 @@ use napi::bindgen_prelude::{
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use crate::types::type_helpers::SocketAddrWrapper;
 use crate::utils::js_instance::JsInstance;
+use crate::utils::to_napi_obj::{CopyableBuffer, NamedMap};
 
 /// Zero-sized marker types naming each JS class that Rust constructs directly.
 /// They exist only to parametrize `JsInstance` and, in turn, `NapiRef`.
 pub mod js_constructible_class {
     /// Test-only marker for `TestJsClass(name, value)`, used by `crate::tests::napi_ref_tests`.
     pub enum TestJsClass {}
+    pub enum SocketAddress {}
+    pub enum Host {}
+    pub enum HostMap {}
 }
 
 /// Arguments passed to the test-only `TestJsClass(name, value)` constructor.
 type TestJsClassCtorArgs<'a> = FnArgs<(&'a str, i32)>;
+
+/// Arguments passed to `net.SocketAddress({ address, port, family })`.
+///
+/// `net.SocketAddress` takes a single options object, which `SocketAddrWrapper`'s `ToNapiValue`
+/// impl produces directly.
+type SocketAddressCtorArgs = FnArgs<(SocketAddrWrapper,)>;
+
+/// Arguments passed to `Host(address, datacenter, rack, hostId)`.
+pub(crate) type HostCtorArgs<'a> = FnArgs<(
+    JsInstance<'a, js_constructible_class::SocketAddress>,
+    Option<&'a str>,
+    Option<&'a str>,
+    CopyableBuffer<'a>,
+)>;
+
+/// Arguments passed to `HostMap(items)`.
+///
+/// `items` is an already-built `Record<string, Host>`, keyed by the hex-encoded bytes of each
+/// host's id.
+type HostMapCtorArgs<'a> =
+    FnArgs<(NamedMap<String, JsInstance<'a, js_constructible_class::Host>>,)>;
 
 /// Defines a per-environment constructor registry for a single pure-JS class, together with:
 /// - a `#[napi]` `register_*_ctor` function that JS calls once per environment, at module load
@@ -125,10 +151,39 @@ macro_rules! define_js_ctor {
 }
 
 define_js_ctor!(
+    /// `net.SocketAddress({ address, port, family })` - Node's built-in socket address class,
+    /// registered by `lib/host.js` so that Rust can hand back already-parsed host addresses.
+    static_name: SOCKET_ADDRESS_CTOR,
+    register_fn: register_socket_address_ctor,
+    build_fn: build_socket_address,
+    args: SocketAddressCtorArgs,
+    class_name: SocketAddress,
+);
+
+define_js_ctor!(
     /// `TestJsClass(name, value)` - test-only class used by `crate::tests::napi_ref_tests`.
     static_name: TEST_JS_CLASS_CTOR,
     register_fn: register_test_js_class_ctor,
     build_fn: build_test_js_class,
     args: TestJsClassCtorArgs<'_>,
     class_name: TestJsClass,
+);
+
+define_js_ctor!(
+    /// `Host(address, datacenter, rack, hostId)`
+    static_name: HOST_CTOR,
+    register_fn: register_host_ctor,
+    build_fn: build_host,
+    args: HostCtorArgs<'_>,
+    class_name: Host,
+);
+
+define_js_ctor!(
+    /// `HostMap(items)`
+    /// `items` is an already-built `Map<string, Host>`.
+    static_name: HOST_MAP_CTOR,
+    register_fn: register_host_map_ctor,
+    build_fn: build_host_map,
+    args: HostMapCtorArgs<'_>,
+    class_name: HostMap,
 );

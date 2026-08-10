@@ -2,7 +2,7 @@ use std::{collections::HashMap, marker::PhantomData};
 
 use napi::{
     Env, JsValue,
-    bindgen_prelude::{JsObjectValue, Object, ToNapiValue},
+    bindgen_prelude::{JsObjectValue, Object, ToNapiValue, check_status},
 };
 
 /// This macro creates a struct with a defined list of field,
@@ -197,3 +197,41 @@ where
 }
 
 pub(crate) use define_rust_to_js_convertible_object;
+
+/// A borrowed byte slice that, when converted to a napi value, is always copied
+/// into a fresh, JS-owned `Buffer` via `napi_create_buffer_copy`. This helps avoid
+/// overhead from `napi_create_external_buffer` used by napi-rs.
+pub struct CopyableBuffer<'a> {
+    data: &'a [u8],
+}
+
+impl<'a> CopyableBuffer<'a> {
+    pub fn new(data: &'a [u8]) -> Self {
+        CopyableBuffer { data }
+    }
+}
+
+impl<'a> ToNapiValue for CopyableBuffer<'a> {
+    /// # Safety
+    ///
+    /// Valid pointer to napi env must be provided.
+    unsafe fn to_napi_value(
+        env: napi::sys::napi_env,
+        val: Self,
+    ) -> napi::Result<napi::sys::napi_value> {
+        let mut result = std::ptr::null_mut();
+        check_status!(
+            unsafe {
+                napi::sys::napi_create_buffer_copy(
+                    env,
+                    val.data.len(),
+                    val.data.as_ptr().cast(),
+                    std::ptr::null_mut(),
+                    &mut result,
+                )
+            },
+            "Failed to create napi buffer via copy",
+        )?;
+        Ok(result)
+    }
+}

@@ -109,7 +109,7 @@ describe("Client", function () {
                 assert.ifError(err);
                 assert.strictEqual(client.hosts.length, 3);
                 client.hosts.forEach(function (h) {
-                    assert.notEqual(h.address, "localhost");
+                    assert.notEqual(h.addressToString(), "localhost");
                 });
                 done();
             });
@@ -151,7 +151,9 @@ describe("Client", function () {
                 assert.ifError(err);
                 // the 3 original hosts
                 assert.strictEqual(client.hosts.length, 3);
-                const hosts = client.hosts.keys();
+                const hosts = client.hosts
+                    .values()
+                    .map((h) => h.addressToString());
 
                 // Hosts can be arranged in any order.
                 expect(hosts).to.include(contactPoints[0] + ":9042");
@@ -285,7 +287,7 @@ describe("Client", function () {
                             assert.strictEqual(
                                 host.pool.connections.length,
                                 3,
-                                "For host " + host.address,
+                                "For host " + host.addressToString(),
                             );
                             /* assert.strictEqual(
                                 state.getOpenConnections(host),
@@ -302,7 +304,7 @@ describe("Client", function () {
         it("should only warmup connections for hosts with local distance", async () => {
             const lbPolicy = new RoundRobinPolicy();
             lbPolicy.getDistance = function (host) {
-                const id = helper.lastOctetOf(host.address);
+                const id = helper.lastOctetOf(host.addressToString());
                 if (id === "1") {
                     return types.distance.local;
                 } else if (id === "2") {
@@ -1196,8 +1198,9 @@ function newInstance(options) {
  */
 function getPoolInfo(client) {
     const info = {};
-    client.hosts.forEach(function (h, address) {
-        info[helper.lastOctetOf(address)] = h.pool.connections.length;
+    client.hosts.forEach(function (h) {
+        info[helper.lastOctetOf(h.addressToString())] =
+            h.pool.connections.length;
     });
     return info;
 }
