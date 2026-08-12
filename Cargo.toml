@@ -21,6 +21,12 @@ openssl = "0.10.70"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["registry"] }
 
+scylla-proxy = { version = "0.0.6", optional = true }
+
+[features]
+# Enables the client-routes fake-NLB test helpers in src/tests/client_routes_proxy_tests.rs.
+client-routes-proxy-tests = ["scylla-proxy"]
+
 [lints.rust]
 unsafe-op-in-unsafe-fn = "warn"
 
@@ -33,4 +39,3 @@ panic = "abort"
 
 [profile.dev]
 panic = "abort"
-
