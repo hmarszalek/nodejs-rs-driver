@@ -1,6 +1,7 @@
 import { ComplexType, CqlType } from "../../index";
 import type { CqlValue } from "../../main";
 import Encoder = require("../encoder");
+import { UdtField } from "../metadata/user-defined-type";
 
 /** Options grouping for column information.
  * This option grouping is present to make this interface backward compatible. */
@@ -15,12 +16,6 @@ export interface ColumnInfoOptions {
     // We are not using this field at the moment.
     // It's likely we will want to remove this field at some point
     reversed?: boolean;
-}
-
-/** Single field of the user-defined type - (name, type) pair */
-export interface UdtField {
-    name: string;
-    type: ColumnInfo;
 }
 
 /** Definition of a user-defined type (UDT).
