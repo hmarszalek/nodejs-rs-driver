@@ -80,7 +80,7 @@ export enum ColumnKind {
 }
 
 export interface ColumnMetadata {
-  type: string;
+  type: ColumnInfo;
   kind: ColumnKind;
 }
 
@@ -144,7 +144,7 @@ export interface SchemaFunction {
 
 export interface UdtField {
   name: string;
-  type: DataTypeInfo;
+  type: ColumnInfo;
 }
 
 export interface Udt {
