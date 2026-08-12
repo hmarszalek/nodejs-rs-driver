@@ -23,6 +23,8 @@ export interface ColumnInfoOptions {
 export interface UdtInfo {
     /** Name of the user-defined type. */
     name: string;
+    /** Keyspace the user-defined type is defined in. */
+    keyspace: string;
     fields: UdtField[];
 }
 
@@ -128,6 +130,7 @@ export function convertComplexType(type: ComplexType): ColumnInfo {
             case CqlType.Udt:
                 return new ColumnInfo(type.baseType.valueOf(), {
                     name: type.name,
+                    keyspace: type.keyspace,
                     fields: type.udt_types.map(
                         (typ: ComplexType, index: number) => ({
                             type: convertComplexType(typ),
