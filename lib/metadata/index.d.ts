@@ -25,6 +25,17 @@ export interface ClientState {
   toString(): string;
 }
 
+export interface ColumnInfoOptions {
+  frozen?: boolean;
+  reversed?: boolean;
+}
+
+export interface UdtInfo {
+  name: string;
+  keyspace: string;
+  fields: UdtField[];
+}
+
 export interface DataTypeInfo {
   code: dataTypes;
   info: string | DataTypeInfo | DataTypeInfo[];
