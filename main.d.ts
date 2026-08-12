@@ -157,9 +157,9 @@ export class Client extends events.EventEmitter {
 export interface HostMap extends events.EventEmitter {
   length: number;
 
-  forEach(callback: (value: Host, key: string) => void): void;
+  forEach(callback: (value: Host, key: Uuid) => void): void;
 
-  get(key: string): Host | undefined;
+  get(key: Uuid | Buffer | net.SocketAddress | string): Host | undefined;
 
   keys(): Uuid[];
 

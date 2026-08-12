@@ -254,6 +254,6 @@ export { Host, HostMap };
 // Registers the Host and HostMap constructors, so that Rust can construct fully-formed
 // instances directly when reading cluster metadata.
 // `net.SocketAddress` is registered too, since Rust builds each host's address with it.
-rust.registerSocketAddressCtor(net.SocketAddress as unknown as () => void);
-rust.registerHostCtor(Host as unknown as () => void);
-rust.registerHostMapCtor(HostMap as unknown as () => void);
+rust.registerSocketAddressCtor(net.SocketAddress);
+rust.registerHostCtor(Host);
+rust.registerHostMapCtor(HostMap);
