@@ -1,5 +1,6 @@
 import * as types from "../types";
 import { EmptyCallback, Host, token, ValueCallback } from "../../";
+import { CqlType } from "../../index";
 import dataTypes = types.dataTypes;
 import Uuid = types.Uuid;
 import InetAddress = types.InetAddress;
@@ -45,9 +46,30 @@ export interface DataTypeInfo {
   };
 }
 
+/**
+ * Describes CQL column type information.
+ *
+ * The `info` field varies depending on the type code:
+ * - Simple types: `info` is `null`
+ * - List/Set: `info` is a `ColumnInfo` for the element type
+ * - Map: `info` is a tuple `[ColumnInfo, ColumnInfo]` for key and value types
+ * - Tuple: `info` is an array of `ColumnInfo` for each element
+ * - UDT: `info` is a `UdtInfo` with name and fields
+ * - Vector (custom): `info` is a tuple `[ColumnInfo, number]` for element type and dimension
+ * - Other custom: `info` is a string
+ */
 export interface ColumnInfo {
-  name: string;
-  type: DataTypeInfo;
+  code: CqlType;
+  info:
+    | null
+    | ColumnInfo
+    | [ColumnInfo, ColumnInfo]
+    | ColumnInfo[]
+    | UdtInfo
+    | [ColumnInfo, number]
+    | string;
+  options?: ColumnInfoOptions;
+  customTypeName?: string;
 }
 
 export enum ColumnKind {
