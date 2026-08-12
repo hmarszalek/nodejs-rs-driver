@@ -1,58 +1,66 @@
-// @ts-nocheck
 "use strict";
-const util = require("util");
-const utils = require("../utils");
-const types = require("../types");
+import util = require("util");
+import types = require("../types");
+import { Row } from "../types";
 
-/** @private */
-const kind = {
-    custom: 0,
-    keys: 1,
-    composites: 2,
-};
+/**
+ * Numeric value representing the kind of a CQL index.
+ * @alias module:metadata~IndexKind
+ */
+enum IndexKind {
+    custom = 0,
+    keys = 1,
+    composites = 2,
+}
+
 /**
  * Describes a CQL index.
  * @alias module:metadata~Index
  */
 class Index {
     /**
-     * Creates a new Index instance.
-     * @param {String} name
-     * @param {String} target
-     * @param {Number|String} kind
-     * @param {Object} options
+     * Name of the index.
      */
-    constructor(name, target, kind, options) {
-        /**
-         * Name of the index.
-         * @type {String}
-         */
+    name: string;
+
+    /**
+     * Target of the index.
+     */
+    target: string;
+
+    /**
+     * A numeric value representing index kind (0: custom, 1: keys, 2: composite);
+     */
+    kind: IndexKind;
+
+    /**
+     * An associative array containing the index options
+     */
+    options: Record<string, any>;
+
+    /**
+     * Creates a new Index instance.
+     * @internal
+     * @ignore
+     */
+    constructor(
+        name: string,
+        target: string,
+        kind: IndexKind | string,
+        options: Record<string, any>,
+    ) {
         this.name = name;
-        /**
-         * Target of the index.
-         * @type {String}
-         */
         this.target = target;
-        /**
-         * A numeric value representing index kind (0: custom, 1: keys, 2: composite);
-         * @type {Number}
-         */
         this.kind = typeof kind === "string" ? getKindByName(kind) : kind;
-        /**
-         * An associative array containing the index options
-         * @type {Object}
-         */
         this.options = options;
     }
     /**
      * Parses Index information from rows in the 'system_schema.indexes' table
      * @deprecated It will be removed in the next major version.
-     * @param {Array.<Row>} indexRows
-     * @returns {Array.<Index>}
      */
-    static fromRows(indexRows) {
+    static fromRows(indexRows: Row[]): Index[] {
         if (!indexRows || indexRows.length === 0) {
-            return utils.emptyArray;
+            return [];
         }
         return indexRows.map(function (row) {
             const options = row["options"];
@@ -67,12 +75,12 @@ class Index {
     /**
      * Parses Index information from rows in the legacy 'system.schema_columns' table.
      * @deprecated It will be removed in the next major version.
-     * @param {Array.<Row>} columnRows
-     * @param {Object.<String, {name, type}>} columnsByName
-     * @returns {Array.<Index>}
      */
-    static fromColumnRows(columnRows, columnsByName) {
-        const result = [];
+    static fromColumnRows(
+        columnRows: Row[],
+        columnsByName: Record<string, any>,
+    ): Index[] {
+        const result: Index[] = [];
         for (let i = 0; i < columnRows.length; i++) {
             const row = columnRows[i];
             const indexName = row["index_name"];
@@ -90,7 +98,7 @@ class Index {
             ) {
                 target = util.format("entries(%s)", c.name);
             } else if (
-                c.type.options.frozen &&
+                c.type.options?.frozen &&
                 (c.type.code === types.dataTypes.map ||
                     c.type.code === types.dataTypes.list ||
                     c.type.code === types.dataTypes.set)
@@ -112,38 +120,43 @@ class Index {
     }
     /**
      * Determines if the index is of composites kind
-     * @returns {Boolean}
      */
-    isCompositesKind() {
-        return this.kind === kind.composites;
+    isCompositesKind(): boolean {
+        return this.kind === IndexKind.composites;
     }
     /**
      * Determines if the index is of keys kind
-     * @returns {Boolean}
      */
-    isKeysKind() {
-        return this.kind === kind.keys;
+    isKeysKind(): boolean {
+        return this.kind === IndexKind.keys;
     }
     /**
      * Determines if the index is of custom kind
-     * @returns {Boolean}
      */
-    isCustomKind() {
-        return this.kind === kind.custom;
+    isCustomKind(): boolean {
+        return this.kind === IndexKind.custom;
     }
 }
 
 /**
- * Gets the number representing the kind based on the name
- * @param {String} name
- * @returns {Number}
+ * Maps the lowercase index kind name (as it appears in schema rows) to its {@link IndexKind}.
  * @private
  */
-function getKindByName(name) {
+const kindsByName: Record<string, IndexKind> = {
+    custom: IndexKind.custom,
+    keys: IndexKind.keys,
+    composites: IndexKind.composites,
+};
+
+/**
+ * Gets the number representing the kind based on the name
+ * @private
+ */
+function getKindByName(name: string): IndexKind {
     if (!name) {
-        return kind.custom;
+        return IndexKind.custom;
     }
-    return kind[name.toLowerCase()];
+    return kindsByName[name.toLowerCase()];
 }
 
-module.exports = Index;
+export { Index, IndexKind };
