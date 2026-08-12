@@ -37,15 +37,6 @@ export interface UdtInfo {
   fields: UdtField[];
 }
 
-export interface DataTypeInfo {
-  code: dataTypes;
-  info: string | DataTypeInfo | DataTypeInfo[];
-  options: {
-    frozen: boolean;
-    reversed: boolean;
-  };
-}
-
 /**
  * Describes CQL column type information.
  *
