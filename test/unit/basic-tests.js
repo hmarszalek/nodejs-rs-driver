@@ -669,7 +669,7 @@ describe("exports", function () {
         assert.strictEqual(typeof api.metadata.Metadata, "function");
         assert.strictEqual(
             api.metadata.Metadata,
-            require("../../lib/metadata"),
+            require("../../lib/metadata").Metadata,
         );
         assert.ok(api.defaultOptions());
         assert.strictEqual(api.tracker, require("../../lib/tracker"));

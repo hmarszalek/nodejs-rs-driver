@@ -15,3 +15,5 @@ schema-index.js
 schema-index.d.ts
 client-state.js
 client-state.d.ts
+index.js
+index.d.ts

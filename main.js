@@ -29,10 +29,7 @@ exports.token = {
     Token: token.Token,
     TokenRange: token.TokenRange,
 };
-const Metadata = require("./lib/metadata");
-exports.metadata = {
-    Metadata: Metadata,
-};
+exports.metadata = require("./lib/metadata");
 exports.geometry = require("./lib/geometry");
 exports.datastax = require("./lib/datastax");
 /**
