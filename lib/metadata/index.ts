@@ -5,7 +5,10 @@
  * @module metadata
  */
 
-import { token } from "../..";
+import { token, ValueCallback } from "../..";
+// TODO: remove once `lib/promise-utils.js` is converted to typescript.
+// @ts-ignore
+import promiseUtils = require("../promise-utils");
 import { Host } from "../host";
 import types = require("../types");
 import { ColumnInfo } from "../types/cql-utils";
@@ -261,14 +264,56 @@ class Metadata {
      * query. The trace itself is stored in Cassandra in the `sessions` and
      * `events` table in the `system_traces` keyspace and can be
      * retrieve manually using the trace identifier.
+     *
+     * Note: the `consistency` parameter is accepted for API compatibility but is currently not
+     * supported – the underlying Rust driver always uses the consistency level configured for
+     * tracing queries at the session level.
      * @param {types.Uuid} traceId Identifier of the trace session.
      * @param {types.consistencies} [consistency] The consistency level to obtain the trace.
-     * @returns {QueryTrace | null} The trace session, or `null` if it does not exist.
+     * @param {Function} [callback] Executes callback(err, result) when execution completed.
+     * When not defined, the method will return a promise.
      */
+    getTrace(traceId: types.Uuid): Promise<QueryTrace>;
     getTrace(
         traceId: types.Uuid,
-        consistency?: types.consistencies,
-    ): QueryTrace | null {
+        consistency: types.consistencies,
+    ): Promise<QueryTrace>;
+    getTrace(traceId: types.Uuid, callback: ValueCallback<QueryTrace>): void;
+    getTrace(
+        traceId: types.Uuid,
+        consistency: types.consistencies,
+        callback: ValueCallback<QueryTrace>,
+    ): void;
+    getTrace(
+        traceId: types.Uuid,
+        consistency?: types.consistencies | ValueCallback<QueryTrace>,
+        callback?: ValueCallback<QueryTrace>,
+    ): Promise<QueryTrace> | void {
+        if (!callback && typeof consistency === "function") {
+            callback = consistency;
+            consistency = undefined;
+        }
+
+        return promiseUtils.optionalCallback(
+            this.#getTrace(
+                traceId,
+                consistency as types.consistencies | undefined,
+            ),
+            callback,
+        );
+    }
+
+    /**
+     * Async-only version of {@link Metadata#getTrace()}, so that reading the trace id failing –
+     * which throws synchronously – is reported like any other error: through the callback, when
+     * one was provided.
+     * @param {Uuid} traceId Identifier of the trace session.
+     * @param {Number} [consistency] The consistency level to obtain the trace.
+     */
+    async #getTrace(
+        traceId: types.Uuid,
+        consistency: types.consistencies | undefined,
+    ): Promise<QueryTrace> {
         throw new Error("TODO: Not implemented");
     }
 
