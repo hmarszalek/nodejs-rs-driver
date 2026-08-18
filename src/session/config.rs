@@ -429,7 +429,7 @@ fn configure_client_routes_builder(
 }
 
 /// Converts the JS side client routes configuration into the rust driver's one.
-fn convert_client_routes_config(
+pub(crate) fn convert_client_routes_config(
     client_routes_config: ClientRoutesConfig,
 ) -> ConvertedResult<ScyllaClientRoutesConfig> {
     let proxies = client_routes_config
