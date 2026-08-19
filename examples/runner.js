@@ -11,8 +11,8 @@ const path = require("path");
  * For description of datastax examples see see ./DataStax/README.md and subdirectories for more information.
  */
 
-// Name of the files to ignore as examples, no matter of their path
-const ignoredFiles = ["util.js"];
+// Name of the files to ignore as examples, no matter of their path.
+const ignoredFiles = ["util.js", "vector-search-ann.js"];
 
 // Timeout for each example in ms
 const timeoutValue = 10000;

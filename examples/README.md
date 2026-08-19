@@ -29,6 +29,10 @@ Alternatively you can run just a specific example by providing the path to it:
 node ./basic/basic-connect.js
 ```
 
+### Vector search example
+
+[`vector/vector-search-ann.js`](vector/vector-search-ann.js) is not run by `npm run examples`, because it needs more than the other examples do: a ScyllaDB cluster with [vector search](https://cloud.docs.scylladb.com/stable/vector-search/) enabled.
+
 ## Code samples
 
 Part of the examples listed here are from the [datastax driver repository](https://github.com/datastax/nodejs-driver/tree/master).
@@ -49,6 +53,7 @@ Those examples are present in this directory and have the `.broken` in the name 
   - [Working with user-defined types (UDT)](udt/udt-insert-select.js)
   - [Working with tuples](tuple/tuple-insert-select.js)
   - [Working with vectors](vector/vector-insert-select.js)
+  - [Vector search with ANN similarity queries](vector/vector-search-ann.js)
 <!-- - Query tracing
   - [Retrieving the trace of a query request](tracing/retrieve-query-trace.js) -->
 - Concurrent execution
