@@ -1638,6 +1638,28 @@ const dataProvider = [
         value: ["ab", "b", "cde"],
     },
     {
+        subtypeString: "ascii",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.ascii }, 3],
+        },
+        value: ["ab", "b", "cde"],
+    },
+    {
+        subtypeString: "varint",
+        typeInfo: {
+            code: types.dataTypes.custom,
+            customTypeName: "vector",
+            info: [{ code: types.dataTypes.varint }, 3],
+        },
+        value: [
+            types.Integer.fromString("-1"),
+            types.Integer.fromString("0"),
+            types.Integer.fromString("12345678901234567890"),
+        ],
+    },
+    {
         subtypeString: "bigint",
         typeInfo: {
             code: types.dataTypes.custom,
