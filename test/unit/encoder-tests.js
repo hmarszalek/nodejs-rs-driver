@@ -2138,6 +2138,377 @@ describe("encoder", function () {
         });
     });
 
+    // Text type hints given by the user are resolved here, unlike the type
+    // names sent by the server, which go through #parseTypeName().
+    describe("dataTypes.getByName()", function () {
+        it("should parse scalar types", function () {
+            [
+                "ascii",
+                "bigint",
+                "blob",
+                "boolean",
+                "counter",
+                "date",
+                "decimal",
+                "double",
+                "duration",
+                "float",
+                "inet",
+                "int",
+                "smallint",
+                "text",
+                "time",
+                "timestamp",
+                "timeuuid",
+                "tinyint",
+                "uuid",
+                "varchar",
+                "varint",
+            ].forEach((name) => {
+                assert.deepEqual(dataTypes.getByName(name), {
+                    code: dataTypes[name],
+                });
+            });
+        });
+
+        it("should parse partial hints of parameterized types", function () {
+            ["list", "set", "map", "tuple", "udt"].forEach((name) => {
+                assert.deepEqual(dataTypes.getByName(name), {
+                    code: dataTypes[name],
+                });
+            });
+        });
+
+        it("should be case insensitive", function () {
+            assert.deepEqual(dataTypes.getByName("Int"), {
+                code: dataTypes.int,
+            });
+            assert.deepEqual(
+                dataTypes.getByName("VECTOR<FLOAT, 3>"),
+                dataTypes.getByName("vector<float, 3>"),
+            );
+        });
+
+        it("should ignore whitespace around the arguments", function () {
+            assert.deepEqual(
+                dataTypes.getByName("vector< float , 3 >"),
+                dataTypes.getByName("vector<float,3>"),
+            );
+            assert.deepEqual(
+                dataTypes.getByName("map< int , text >"),
+                dataTypes.getByName("map<int,text>"),
+            );
+        });
+
+        const parameterized = [
+            [
+                "list<int>",
+                { code: dataTypes.list, info: { code: dataTypes.int } },
+            ],
+            [
+                "set<text>",
+                { code: dataTypes.set, info: { code: dataTypes.text } },
+            ],
+            [
+                "list<map<int, text>>",
+                {
+                    code: dataTypes.list,
+                    info: {
+                        code: dataTypes.map,
+                        info: [
+                            { code: dataTypes.int },
+                            { code: dataTypes.text },
+                        ],
+                    },
+                },
+            ],
+            [
+                "list<vector<float, 3>>",
+                {
+                    code: dataTypes.list,
+                    info: {
+                        code: dataTypes.custom,
+                        customTypeName: "vector",
+                        info: [{ code: dataTypes.float }, 3],
+                    },
+                },
+            ],
+            [
+                "set<vector<float, 3>>",
+                {
+                    code: dataTypes.set,
+                    info: {
+                        code: dataTypes.custom,
+                        customTypeName: "vector",
+                        info: [{ code: dataTypes.float }, 3],
+                    },
+                },
+            ],
+            ["udt<my_udt>", { code: dataTypes.udt, info: "my_udt" }],
+            [
+                "map<int, text>",
+                {
+                    code: dataTypes.map,
+                    info: [{ code: dataTypes.int }, { code: dataTypes.text }],
+                },
+            ],
+            [
+                "map<int, map<int, text>>",
+                {
+                    code: dataTypes.map,
+                    info: [
+                        { code: dataTypes.int },
+                        {
+                            code: dataTypes.map,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.text },
+                            ],
+                        },
+                    ],
+                },
+            ],
+            [
+                "map<map<int, text>, int>",
+                {
+                    code: dataTypes.map,
+                    info: [
+                        {
+                            code: dataTypes.map,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.text },
+                            ],
+                        },
+                        { code: dataTypes.int },
+                    ],
+                },
+            ],
+            [
+                "map<int, tuple<int, text>>",
+                {
+                    code: dataTypes.map,
+                    info: [
+                        { code: dataTypes.int },
+                        {
+                            code: dataTypes.tuple,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.text },
+                            ],
+                        },
+                    ],
+                },
+            ],
+            [
+                "map<int, vector<float, 3>>",
+                {
+                    code: dataTypes.map,
+                    info: [
+                        { code: dataTypes.int },
+                        {
+                            code: dataTypes.custom,
+                            customTypeName: "vector",
+                            info: [{ code: dataTypes.float }, 3],
+                        },
+                    ],
+                },
+            ],
+            [
+                "map<tuple<int, text>, list<int>>",
+                {
+                    code: dataTypes.map,
+                    info: [
+                        {
+                            code: dataTypes.tuple,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.text },
+                            ],
+                        },
+                        { code: dataTypes.list, info: { code: dataTypes.int } },
+                    ],
+                },
+            ],
+
+            [
+                "tuple<int, text>",
+                {
+                    code: dataTypes.tuple,
+                    info: [{ code: dataTypes.int }, { code: dataTypes.text }],
+                },
+            ],
+            [
+                "tuple<int, text, boolean>",
+                {
+                    code: dataTypes.tuple,
+                    info: [
+                        { code: dataTypes.int },
+                        { code: dataTypes.text },
+                        { code: dataTypes.boolean },
+                    ],
+                },
+            ],
+            [
+                "tuple<tuple<int, int>, int>",
+                {
+                    code: dataTypes.tuple,
+                    info: [
+                        {
+                            code: dataTypes.tuple,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.int },
+                            ],
+                        },
+                        { code: dataTypes.int },
+                    ],
+                },
+            ],
+            [
+                "tuple<map<int, text>, int>",
+                {
+                    code: dataTypes.tuple,
+                    info: [
+                        {
+                            code: dataTypes.map,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.text },
+                            ],
+                        },
+                        { code: dataTypes.int },
+                    ],
+                },
+            ],
+            [
+                "tuple<vector<float, 3>, int>",
+                {
+                    code: dataTypes.tuple,
+                    info: [
+                        {
+                            code: dataTypes.custom,
+                            customTypeName: "vector",
+                            info: [{ code: dataTypes.float }, 3],
+                        },
+                        { code: dataTypes.int },
+                    ],
+                },
+            ],
+            [
+                "tuple<list<int>, set<text>>",
+                {
+                    code: dataTypes.tuple,
+                    info: [
+                        { code: dataTypes.list, info: { code: dataTypes.int } },
+                        { code: dataTypes.set, info: { code: dataTypes.text } },
+                    ],
+                },
+            ],
+
+            [
+                "vector<float, 3>",
+                {
+                    code: dataTypes.custom,
+                    customTypeName: "vector",
+                    info: [{ code: dataTypes.float }, 3],
+                },
+            ],
+            [
+                "vector<list<int>, 3>",
+                {
+                    code: dataTypes.custom,
+                    customTypeName: "vector",
+                    info: [
+                        { code: dataTypes.list, info: { code: dataTypes.int } },
+                        3,
+                    ],
+                },
+            ],
+            [
+                "vector<map<int, text>, 3>",
+                {
+                    code: dataTypes.custom,
+                    customTypeName: "vector",
+                    info: [
+                        {
+                            code: dataTypes.map,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.text },
+                            ],
+                        },
+                        3,
+                    ],
+                },
+            ],
+            [
+                "vector<tuple<int, text>, 3>",
+                {
+                    code: dataTypes.custom,
+                    customTypeName: "vector",
+                    info: [
+                        {
+                            code: dataTypes.tuple,
+                            info: [
+                                { code: dataTypes.int },
+                                { code: dataTypes.text },
+                            ],
+                        },
+                        3,
+                    ],
+                },
+            ],
+            [
+                "vector<udt<my_udt>, 3>",
+                {
+                    code: dataTypes.custom,
+                    customTypeName: "vector",
+                    info: [{ code: dataTypes.udt, info: "my_udt" }, 3],
+                },
+            ],
+            [
+                "vector<vector<float, 2>, 3>",
+                {
+                    code: dataTypes.custom,
+                    customTypeName: "vector",
+                    info: [
+                        {
+                            code: dataTypes.custom,
+                            customTypeName: "vector",
+                            info: [{ code: dataTypes.float }, 2],
+                        },
+                        3,
+                    ],
+                },
+            ],
+        ];
+
+        parameterized.forEach(([name, expected]) => {
+            it(`should parse ${name}`, function () {
+                assert.deepEqual(dataTypes.getByName(name), expected);
+            });
+        });
+
+        const invalid = [
+            "notatype",
+            "list<notatype>",
+            "vector<notatype, 3>",
+            "tuple<>",
+            "vector<float>",
+            "vector<float, x>",
+            "vector<float, 3, x>",
+            "map<int>",
+            "map<int, text, boolean>",
+        ];
+
+        invalid.forEach((name) => {
+            it(`should reject ${name}`, function () {
+                assert.throws(() => dataTypes.getByName(name), TypeError);
+            });
+        });
+    });
+
     describe("#parseKeyTypes", function () {
         const encoder = new Encoder(1, {});
         it("should parse single type", function () {
