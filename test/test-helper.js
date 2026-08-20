@@ -1827,9 +1827,7 @@ const dataProviderWithCollections = dataProvider
             },
             value: data.value.map((value) => [value, value, value]),
         },
-        // TODO: Fails due to https://github.com/scylladb/scylladb/issues/26704
-        // Fix, once the change is ported to ccm.
-        /* // vector<map<int, subtype>, 3>
+        // vector<map<int, subtype>, 3>
         {
             subtypeString: "map<int, " + data.subtypeString + ">",
             typeInfo: {
@@ -1872,8 +1870,8 @@ const dataProviderWithCollections = dataProvider
                 ],
                 customTypeName: "vector",
             },
-            value: data.value.map((value) => [value, value, value]),
-        }, */
+            value: data.value.map((value) => [value]),
+        },
         // vector<tuple<subtype, subtype>, 3>
         {
             subtypeString:
