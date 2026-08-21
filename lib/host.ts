@@ -3,6 +3,8 @@
 import events = require("events");
 import net = require("node:net");
 
+// TODO: remove once `lib/token.js` is converted to typescript.
+// @ts-ignore
 import { Token } from "./token";
 import Uuid = require("./types/uuid");
 import rust = require("../index");
