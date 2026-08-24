@@ -10,55 +10,55 @@ class Aggregate {
     /**
      * Name of the aggregate.
      */
-    name: string | null;
+    readonly name: string | null;
 
     /**
      * Name of the keyspace where the aggregate is declared.
      */
-    keyspaceName: string | null;
+    readonly keyspaceName: string | null;
 
     /**
      * Signature of the aggregate.
      */
-    signature: string[] | null;
+    readonly signature: readonly string[] | null;
 
     /**
      * List of the CQL aggregate argument types.
      */
-    argumentTypes: ColumnInfo[] | null;
+    readonly argumentTypes: readonly ColumnInfo[] | null;
 
     /**
      * State Function.
      */
-    stateFunction: string | null;
+    readonly stateFunction: string | null;
 
     /**
      * State Type.
      */
-    stateType: ColumnInfo | null;
+    readonly stateType: ColumnInfo | null;
 
     /**
      * Final Function.
      */
-    finalFunction: string | null;
+    readonly finalFunction: string | null;
 
-    initConditionRaw: string | null;
+    readonly initConditionRaw: string | null;
 
     /**
      * Initial state value of this aggregate.
      */
-    initCondition: string | null;
+    readonly initCondition: string | null;
 
     /**
      * Type of the return value.
      */
-    returnType: ColumnInfo | null;
+    readonly returnType: ColumnInfo | null;
 
     /**
      * Indicates whether or not this aggregate is deterministic.  This means that
      * given a particular input, the aggregate will always produce the same output.
      */
-    deterministic: boolean | null;
+    readonly deterministic: boolean | null;
 
     /**
      * Creates a new Aggregate.

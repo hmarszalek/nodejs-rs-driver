@@ -75,18 +75,18 @@ const _traceAttemptDelay = 400;
  * @alias module:metadata~QueryTrace
  */
 export interface QueryTrace {
-    requestType: string;
-    coordinator: types.InetAddress;
-    parameters: { [key: string]: any };
-    startedAt: number | types.Long;
-    duration: number;
-    clientAddress: string;
-    events: Array<{
-        id: types.Uuid;
-        activity: any;
-        source: any;
-        elapsed: any;
-        thread: any;
+    readonly requestType: string;
+    readonly coordinator: types.InetAddress;
+    readonly parameters: Readonly<{ [key: string]: any }>;
+    readonly startedAt: number | types.Long;
+    readonly duration: number;
+    readonly clientAddress: string;
+    readonly events: ReadonlyArray<{
+        readonly id: types.Uuid;
+        readonly activity: any;
+        readonly source: any;
+        readonly elapsed: any;
+        readonly thread: any;
     }>;
 }
 
@@ -209,7 +209,10 @@ class Metadata {
      * @param {string} name Name of the Function.
      * @returns {ReadonlyArray<SchemaFunction>} An array of schema function metadata.
      */
-    getFunctions(keyspaceName: string, name: string): SchemaFunction[] {
+    getFunctions(
+        keyspaceName: string,
+        name: string,
+    ): readonly SchemaFunction[] {
         throw new Error("TODO: Not implemented");
     }
 
@@ -235,7 +238,7 @@ class Metadata {
      * @param {string} name Name of the aggregate.
      * @returns {ReadonlyArray<Aggregate>} An array of schema aggregate metadata.
      */
-    getAggregates(keyspaceName: string, name: string): Aggregate[] {
+    getAggregates(keyspaceName: string, name: string): readonly Aggregate[] {
         throw new Error("TODO: Not implemented");
     }
 

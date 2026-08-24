@@ -21,22 +21,22 @@ class Index {
     /**
      * Name of the index.
      */
-    name: string;
+    readonly name: string;
 
     /**
      * Target of the index.
      */
-    target: string;
+    readonly target: string;
 
     /**
      * A numeric value representing index kind (0: custom, 1: keys, 2: composite);
      */
-    kind: IndexKind;
+    readonly kind: IndexKind;
 
     /**
      * An associative array containing the index options
      */
-    options: Record<string, any>;
+    readonly options: Readonly<Record<string, any>>;
 
     /**
      * Creates a new Index instance.
