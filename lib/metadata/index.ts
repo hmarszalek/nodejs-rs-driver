@@ -45,34 +45,12 @@ export { ClientState };
  * @const
  * @private
  */
-const _selectTraceSession =
-    "SELECT * FROM system_traces.sessions WHERE session_id=%s";
-/**
- * @const
- * @private
- */
-const _selectTraceEvents =
-    "SELECT * FROM system_traces.events WHERE session_id=%s";
-/**
- * @const
- * @private
- */
 const _selectSchemaVersionPeers = "SELECT schema_version FROM system.peers";
 /**
  * @const
  * @private
  */
 const _selectSchemaVersionLocal = "SELECT schema_version FROM system.local";
-/**
- * @const
- * @private
- */
-const _traceMaxAttemps = 5;
-/**
- * @const
- * @private
- */
-const _traceAttemptDelay = 400;
 
 /**
  * Represents cluster and schema information.
