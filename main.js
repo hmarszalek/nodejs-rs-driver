@@ -30,6 +30,8 @@ exports.token = {
     TokenRange: token.TokenRange,
 };
 exports.metadata = require("./lib/metadata");
+exports.Host = require("./lib/host").Host;
+exports.HostMap = require("./lib/host").HostMap;
 exports.geometry = require("./lib/geometry");
 exports.datastax = require("./lib/datastax");
 /**

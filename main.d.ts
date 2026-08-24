@@ -8,6 +8,7 @@ import * as types from "./lib/types";
 import * as metrics from "./lib/metrics";
 import * as tracker from "./lib/tracker";
 import * as metadata from "./lib/metadata";
+import { Host, HostMap } from "./lib/host";
 import Long = types.Long;
 import Uuid = types.Uuid;
 
@@ -16,6 +17,7 @@ export * as concurrent from "./lib/concurrent";
 export * as mapping from "./lib/mapping";
 export * as errors from "./lib/errors";
 export { auth, metadata, metrics, policies, tracker, types };
+export { Host, HostMap };
 
 export const version: number;
 
@@ -152,33 +154,6 @@ export class Client extends events.EventEmitter {
   getReplicas(keyspace: string, token: Buffer): Host[];
 
   getState(): metadata.ClientState;
-}
-
-export interface HostMap extends events.EventEmitter {
-  length: number;
-
-  forEach(callback: (value: Host, key: Uuid) => void): void;
-
-  get(key: Uuid | Buffer | net.SocketAddress | string): Host | undefined;
-
-  keys(): Uuid[];
-
-  values(): Host[];
-}
-
-export interface Host extends events.EventEmitter {
-  address: net.SocketAddress;
-  cassandraVersion: string | null;
-  datacenter: string | null;
-  rack: string | null;
-  tokens: string[];
-  hostId: types.Uuid;
-
-  canBeConsideredAsUp(): boolean;
-
-  getCassandraVersion(): number[];
-
-  isUp(): boolean;
 }
 
 export interface ExecutionOptions {
