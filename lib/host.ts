@@ -237,10 +237,18 @@ class HostMap extends events.EventEmitter {
         return this.#values;
     }
 
+    /**
+     * @internal
+     * @ignore
+     */
     inspect(): Readonly<Record<string, Host>> {
         return this.#hostsById;
     }
 
+    /**
+     * @internal
+     * @ignore
+     */
     toJSON(): Record<string, Host> {
         return Object.fromEntries(
             Object.values(this.#hostsById).map((host) => [
