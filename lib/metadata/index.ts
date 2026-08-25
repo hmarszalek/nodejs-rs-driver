@@ -17,9 +17,7 @@ import { KeyspaceMetadata } from "./keyspace-metadata";
 import { SchemaFunction } from "./schema-function";
 import { Aggregate } from "./aggregate";
 import ClientState = require("./client-state");
-// TODO: Remove when lib/client-options.js is converted to Typescript.
-// @ts-ignore
-import { ClientOptions } from "../client-options";
+import { SessionWrapper as RustClient } from "../../index";
 
 export { Aggregate } from "./aggregate";
 export { SchemaFunction } from "./schema-function";
@@ -89,10 +87,16 @@ export interface QueryTrace {
  * The metadata class acts as a internal state of the driver.
  */
 class Metadata {
+    #rustClient: RustClient;
+
     /**
      * Creates a new instance of {@link Metadata}.
+     * @internal
+     * @ignore
      */
-    constructor(_options: ClientOptions, _controlConnection: unknown) {}
+    constructor(rustClient: RustClient) {
+        this.#rustClient = rustClient;
+    }
 
     /**
      * Gets the keyspace metadata by name.
