@@ -17,6 +17,7 @@ Support for some optional driver features is planned for upcoming releases.
    getting-started/getting-started
    statements/index
    paging/paging
+   metadata/metadata
    logging/logging
    policies/index
    connecting/authentication
@@ -36,6 +37,7 @@ Contents
   - :doc:`Batch Statements <statements/batch>`
 
 - :doc:`Fetching Large Result Sets <paging/paging>` - Paging through large result sets
+- :doc:`Schema Metadata <metadata/metadata>` - Inspecting keyspaces, tables, views and user-defined types
 - :doc:`Policies <policies/index>` - Load balancing and retry policies
 - :doc:`Authentication <connecting/authentication>` - Connecting with credentials or SSL
 - :doc:`Client Routes <connecting/client-routes>` - Connecting over private networking
