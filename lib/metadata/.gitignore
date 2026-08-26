@@ -1,0 +1,19 @@
+# TypeScript build output (emitted in-place from .ts files)
+keyspace-metadata.js
+keyspace-metadata.d.ts
+table-metadata.js
+table-metadata.d.ts
+materialized-view.js
+materialized-view.d.ts
+user-defined-type.js
+user-defined-type.d.ts
+aggregate.js
+aggregate.d.ts
+schema-function.js
+schema-function.d.ts
+schema-index.js
+schema-index.d.ts
+client-state.js
+client-state.d.ts
+index.js
+index.d.ts

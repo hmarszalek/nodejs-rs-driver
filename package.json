@@ -60,6 +60,7 @@
     "examples": "node ./examples/runner.js",
     "integration": "./node_modules/.bin/mocha test/integration/supported --recursive",
     "integration-gc": "./node_modules/.bin/mocha --node-option=expose-gc test/integration/supported --recursive --grep 'expose-gc'",
+    "typescript-tests": "cd test/typescript && rm -f generated.ts *.js && tsc -p . && node -e \"require('./api-generation-test').generate()\" > generated.ts && tsc -p .",
     "prettier": "npx prettier \"{lib,examples,test}/**/*.{js,ts}\" --write",
     "full-clippy": "cargo clippy --all-targets --all-features -- -D warnings",
     "pre-push": "npm run prettier && cargo fmt && npm run full-clippy && napi build --platform && npm run eslint-fix",

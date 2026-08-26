@@ -1,5 +1,7 @@
 import { ComplexType, CqlType } from "../../index";
 import type { CqlValue } from "../../main";
+// TODO: Remove once lib/encoder.js is converted to TypeScript.
+// @ts-ignore - untyped JS module
 import Encoder = require("../encoder");
 import { UdtField } from "../metadata/user-defined-type";
 

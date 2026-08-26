@@ -3,6 +3,8 @@
 import events = require("events");
 import net = require("node:net");
 
+// TODO: remove once `lib/token.js` is converted to typescript.
+// @ts-ignore
 import { Token } from "./token";
 import Uuid = require("./types/uuid");
 import rust = require("../index");
@@ -235,10 +237,18 @@ class HostMap extends events.EventEmitter {
         return this.#values;
     }
 
+    /**
+     * @internal
+     * @ignore
+     */
     inspect(): Readonly<Record<string, Host>> {
         return this.#hostsById;
     }
 
+    /**
+     * @internal
+     * @ignore
+     */
     toJSON(): Record<string, Host> {
         return Object.fromEntries(
             Object.values(this.#hostsById).map((host) => [

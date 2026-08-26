@@ -27,12 +27,6 @@ jobs:
       - name: Build
         run: npm run build
         shell: bash
-      - name: Install TypeScript 5
-        run: npm install -g typescript@5
       - name: Compile TypeScript
-        run: |
-          pushd test/typescript/
-          tsc -p .
-          node -e "require('./api-generation-test').generate()" > generated.ts
-          tsc generated.ts
+        run: npm run typescript-tests
         shell: bash
