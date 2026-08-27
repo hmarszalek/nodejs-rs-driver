@@ -5,6 +5,8 @@ use napi::{
     bindgen_prelude::{JsObjectValue, Object, ToNapiValue, check_status},
 };
 
+use crate::utils::js_instance::JsInstance;
+
 /// This macro creates a struct with a defined list of field,
 /// that can be used as an return value to JS exposed function.
 ///
@@ -169,6 +171,20 @@ where
             map: v,
             _p: PhantomData,
         }
+    }
+
+    /// Builds the JS object this map describes, tagged as the record `C`.
+    ///
+    /// Returning a `NamedMap` from a `#[napi]` function does not need this - napi converts it at
+    /// the boundary. It is for the callers that have to keep hold of the object afterwards, such
+    /// as the record caches, which cannot pin something they never had as a value.
+    pub(crate) fn into_jsinstance<'env, C>(
+        self,
+        env: &'env Env,
+    ) -> napi::Result<JsInstance<'env, C>> {
+        let raw = unsafe { ToNapiValue::to_napi_value(env.raw(), self)? };
+        let object = Object::from_raw(env.raw(), raw);
+        Ok(JsInstance::from_object(object))
     }
 }
 
