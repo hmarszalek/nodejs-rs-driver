@@ -1,60 +1,60 @@
-// @ts-nocheck
 "use strict";
 
-const types = require("./types");
-const util = require("util");
+import types = require("./types");
+import util = require("util");
 
-const _Murmur3TokenType = types.dataTypes.getByName("bigint");
-const _RandomTokenType = types.dataTypes.getByName("varint");
-const _OrderedTokenType = types.dataTypes.getByName("blob");
+const _Murmur3TokenType = { code: types.dataTypes.bigint };
+const _RandomTokenType = { code: types.dataTypes.varint };
+const _OrderedTokenType = { code: types.dataTypes.blob };
+
+/**
+ * The type info of the value of a token.
+ */
+type TokenType = { code: types.dataTypes };
 
 /**
  * Represents a token on the Cassandra ring.
  */
 class Token {
-    #value;
+    #value: any;
 
-    constructor(value) {
+    constructor(value: any) {
         this.#value = value;
     }
 
     /**
-     * @returns {{code: number, info: *|Object}} The type info for the
-     *                                           type of the value of the token.
+     * Returns the type info for the type of the value of the token.
      */
-    getType() {
+    getType(): TokenType {
         throw new Error(
             "You must implement a getType function for this Token instance",
         );
     }
 
     /**
-     * @returns {*} The raw value of the token.
+     * Returns the raw value of the token.
      */
-    getValue() {
+    getValue(): any {
         return this.#value;
     }
 
-    toString() {
+    toString(): string {
         return this.#value.toString();
     }
 
     /**
      * Returns 0 if the values are equal, 1 if greater than other, -1
      * otherwise.
-     *
-     * @param {Token} other
-     * @returns {Number}
      */
-    compare(other) {
+    compare(other: Token): number {
         return this.#value.compare(other.#value);
     }
 
-    equals(other) {
+    equals(other: Token): boolean {
         return this.compare(other) === 0;
     }
 
-    inspect() {
+    inspect(): string {
         return this.constructor.name + " { " + this.toString() + " }";
     }
 }
@@ -66,11 +66,11 @@ class Token {
  * The raw token type is a varint (represented by MutableLong).
  */
 class Murmur3Token extends Token {
-    constructor(value) {
+    constructor(value: any) {
         super(value);
     }
 
-    getType() {
+    getType(): TokenType {
         return _Murmur3TokenType;
     }
 }
@@ -82,11 +82,11 @@ class Murmur3Token extends Token {
  * The raw token type is a bigint (represented by Number).
  */
 class RandomToken extends Token {
-    constructor(value) {
+    constructor(value: any) {
         super(value);
     }
 
-    getType() {
+    getType(): TokenType {
         return _RandomTokenType;
     }
 }
@@ -98,15 +98,15 @@ class RandomToken extends Token {
  * The raw token type is a blob (represented by Buffer or Array).
  */
 class ByteOrderedToken extends Token {
-    constructor(value) {
+    constructor(value: any) {
         super(value);
     }
 
-    getType() {
+    getType(): TokenType {
         return _OrderedTokenType;
     }
 
-    toString() {
+    toString(): string {
         return this.getValue().toString("hex").toUpperCase();
     }
 }
@@ -123,12 +123,13 @@ class ByteOrderedToken extends Token {
  * in a range, see {@link unwrap}.
  */
 class TokenRange {
-    #tokenizer;
+    start: Token;
+    end: Token;
+    #tokenizer: any;
 
-    constructor(start, end, tokenizer) {
+    constructor(start: Token, end: Token, tokenizer: any) {
         this.start = start;
         this.end = end;
-        // This field should not be modified.
         this.#tokenizer = tokenizer;
     }
 
@@ -139,11 +140,11 @@ class TokenRange {
      * Splitting an empty range is not permitted.  But not that, in edge
      * cases, splitting a range might produce one or more empty ranges.
      *
-     * @param {Number} numberOfSplits Number of splits to make.
-     * @returns {TokenRange[]} Split ranges.
+     * @param numberOfSplits Number of splits to make.
+     * @returns Split ranges.
      * @throws {Error} If splitting an empty range.
      */
-    splitEvenly(numberOfSplits) {
+    splitEvenly(numberOfSplits: number): TokenRange[] {
         if (numberOfSplits < 1) {
             throw new Error(
                 util.format(
@@ -156,7 +157,7 @@ class TokenRange {
             throw new Error("Can't split empty range " + this.toString());
         }
 
-        const tokenRanges = [];
+        const tokenRanges: TokenRange[] = [];
         const splitPoints = this.#tokenizer.split(
             this.start,
             this.end,
@@ -185,9 +186,9 @@ class TokenRange {
      * whole ring.  This is consistent with the behavior of CQL range
      * queries.
      *
-     * @returns {boolean} Whether this range is empty.
+     * @returns Whether this range is empty.
      */
-    isEmpty() {
+    isEmpty(): boolean {
         return (
             this.start.equals(this.end) &&
             !this.start.equals(this.#tokenizer.minToken())
@@ -199,9 +200,9 @@ class TokenRange {
      * is greater than the end token and the end token is not the
      * minimum token.
      *
-     * @returns {boolean} Whether this range wraps around.
+     * @returns Whether this range wraps around.
      */
-    isWrappedAround() {
+    isWrappedAround(): boolean {
         return (
             this.start.compare(this.end) > 0 &&
             !this.end.equals(this.#tokenizer.minToken())
@@ -217,21 +218,14 @@ class TokenRange {
      * This is useful for CQL range queries, which do not handle
      * wrapping.
      *
-     * @returns {TokenRange[]} The list of non-wrapping ranges.
+     * @returns The list of non-wrapping ranges.
      */
-    unwrap() {
+    unwrap(): TokenRange[] {
         if (this.isWrappedAround()) {
+            const minToken = this.#tokenizer.minToken();
             return [
-                new TokenRange(
-                    this.start,
-                    this.#tokenizer.minToken(),
-                    this.#tokenizer,
-                ),
-                new TokenRange(
-                    this.#tokenizer.minToken(),
-                    this.end,
-                    this.#tokenizer,
-                ),
+                new TokenRange(this.start, minToken, this.#tokenizer),
+                new TokenRange(minToken, this.end, this.#tokenizer),
             ];
         }
         return [this];
@@ -240,10 +234,10 @@ class TokenRange {
     /**
      * Whether this range contains a given Token.
      *
-     * @param {*} token Token to check for.
-     * @returns {boolean} Whether or not the Token is in this range.
+     * @param token Token to check for.
+     * @returns Whether or not the Token is in this range.
      */
-    contains(token) {
+    contains(token: Token): boolean {
         if (this.isEmpty()) {
             return false;
         }
@@ -269,10 +263,10 @@ class TokenRange {
     /**
      * Determines if the input range is equivalent to this one.
      *
-     * @param {TokenRange} other Range to compare with.
-     * @returns {boolean} Whether or not the ranges are equal.
+     * @param other Range to compare with.
+     * @returns Whether or not the ranges are equal.
      */
-    equals(other) {
+    equals(other: unknown): boolean {
         if (other === this) {
             return true;
         } else if (other instanceof TokenRange) {
@@ -285,15 +279,14 @@ class TokenRange {
      * Returns 0 if the values are equal, otherwise compares against
      * start, if start is equal, compares against end.
      *
-     * @param {TokenRange} other Range to compare with.
-     * @returns {Number}
+     * @param other Range to compare with.
      */
-    compare(other) {
+    compare(other: TokenRange): number {
         const compareStart = this.start.compare(other.start);
         return compareStart !== 0 ? compareStart : this.end.compare(other.end);
     }
 
-    toString() {
+    toString(): string {
         return util.format(
             "]%s, %s]",
             this.start.toString(),
@@ -302,8 +295,4 @@ class TokenRange {
     }
 }
 
-exports.Token = Token;
-exports.TokenRange = TokenRange;
-exports.ByteOrderedToken = ByteOrderedToken;
-exports.Murmur3Token = Murmur3Token;
-exports.RandomToken = RandomToken;
+export { Token, Murmur3Token, RandomToken, ByteOrderedToken, TokenRange };
