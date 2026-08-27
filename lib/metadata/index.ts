@@ -13,21 +13,27 @@ import { ColumnInfo } from "../types/cql-utils";
 import { Udt } from "./user-defined-type";
 import { TableMetadata } from "./table-metadata";
 import { MaterializedView } from "./materialized-view";
-import { KeyspaceMetadata } from "./keyspace-metadata";
+import { KeyspaceMetadata } from "../../index";
 import { SchemaFunction } from "./schema-function";
 import { Aggregate } from "./aggregate";
 import ClientState = require("./client-state");
-// TODO: Remove when lib/client-options.js is converted to Typescript.
-// @ts-ignore
-import { ClientOptions } from "../client-options";
+import { SessionWrapper as RustClient } from "../../index";
 
 export { Aggregate } from "./aggregate";
 export { SchemaFunction } from "./schema-function";
 export { Index, IndexKind } from "./schema-index";
-export { KeyspaceMetadata, Strategy, StrategyKind } from "./keyspace-metadata";
 export { TableMetadata, ColumnMetadata, ColumnKind } from "./table-metadata";
 export { MaterializedView } from "./materialized-view";
 export { Udt, UdtField } from "./user-defined-type";
+export { KeyspaceMetadata } from "../../index";
+export type {
+    SimpleStrategy,
+    NetworkTopologyStrategy,
+    LocalStrategy,
+    OtherStrategy,
+    Strategy,
+} from "./strategy";
+export { StrategyKind } from "./strategy";
 export { ClientState };
 
 /**
@@ -69,18 +75,18 @@ const _traceAttemptDelay = 400;
  * @alias module:metadata~QueryTrace
  */
 export interface QueryTrace {
-    requestType: string;
-    coordinator: types.InetAddress;
-    parameters: { [key: string]: any };
-    startedAt: number | types.Long;
-    duration: number;
-    clientAddress: string;
-    events: Array<{
-        id: types.Uuid;
-        activity: any;
-        source: any;
-        elapsed: any;
-        thread: any;
+    readonly requestType: string;
+    readonly coordinator: types.InetAddress;
+    readonly parameters: Readonly<{ [key: string]: any }>;
+    readonly startedAt: number | types.Long;
+    readonly duration: number;
+    readonly clientAddress: string;
+    readonly events: ReadonlyArray<{
+        readonly id: types.Uuid;
+        readonly activity: any;
+        readonly source: any;
+        readonly elapsed: any;
+        readonly thread: any;
     }>;
 }
 
@@ -89,26 +95,32 @@ export interface QueryTrace {
  * The metadata class acts as a internal state of the driver.
  */
 class Metadata {
+    #rustClient: RustClient;
+
     /**
      * Creates a new instance of {@link Metadata}.
+     * @internal
+     * @ignore
      */
-    constructor(_options: ClientOptions, _controlConnection: unknown) {}
+    constructor(rustClient: RustClient) {
+        this.#rustClient = rustClient;
+    }
 
     /**
      * Gets the keyspace metadata by name.
-     * @param name Name of the keyspace.
-     * @returns The keyspace metadata, or `null` if it does not exist.
+     * @param {string} name Name of the keyspace.
+     * @returns {KeyspaceMetadata | null} The keyspace metadata, or `null` if it does not exist.
      */
     getKeyspace(name: string): KeyspaceMetadata | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getKeyspaceMetadata(name);
     }
 
     /**
      * Gets all keyspace metadata.
-     * @returns A map of all keyspaces indexed by name.
+     * @returns {Readonly<Record<string, KeyspaceMetadata>>} Every keyspace, keyed by name.
      */
-    getKeyspaces(): Map<string, KeyspaceMetadata> {
-        throw new Error("TODO: Not implemented");
+    getKeyspaces(): Readonly<Record<string, KeyspaceMetadata>> {
+        return this.#rustClient.getAllKeyspaces();
     }
 
     /**
@@ -116,8 +128,10 @@ class Metadata {
      *
      * It uses the pre-loaded keyspace metadata to retrieve the replicas for a token for a given keyspace.
      * When the keyspace metadata has not been loaded, it returns null.
-     * @param keyspaceName Name of the keyspace.
-     * @param token Can be Buffer (serialized partition key), Token or TokenRange.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {Buffer | token.Token | token.TokenRange} token Can be Buffer (serialized partition key),
+     * Token or TokenRange.
+     * @returns {Host[]} The replicas.
      */
     getReplicas(
         keyspaceName: string,
@@ -128,7 +142,8 @@ class Metadata {
 
     /**
      * Gets the token ranges that define data distribution in the ring.
-     * @returns The ranges of the ring or empty set if schema metadata is not enabled.
+     * @returns {Set<token.TokenRange>} The ranges of the ring or empty set if schema metadata is
+     * not enabled.
      */
     getTokenRanges(): Set<token.TokenRange> {
         throw new Error("TODO: Not implemented");
@@ -136,10 +151,10 @@ class Metadata {
 
     /**
      * Gets the token ranges that are replicated on the given host, for the given keyspace.
-     * @param keyspaceName The name of the keyspace to get ranges for.
-     * @param host The host.
-     * @returns Ranges for the keyspace on this host or null if keyspace
-     * isn't found or hasn't been loaded.
+     * @param {string} keyspaceName The name of the keyspace to get ranges for.
+     * @param {Host} host The host.
+     * @returns {Set<token.TokenRange> | null} Ranges for the keyspace on this host or null if
+     * keyspace isn't found or hasn't been loaded.
      */
     getTokenRangesForHost(
         keyspaceName: string,
@@ -151,8 +166,8 @@ class Metadata {
     /**
      * Constructs a Token from the input buffer(s) or string input. If a string is passed in
      * it is assumed this matches the token representation reported by cassandra.
-     * @param components The token components.
-     * @returns constructed token from the input buffer.
+     * @param {Buffer[] | Buffer | string} components The token components.
+     * @returns {token.Token} Constructed token from the input buffer.
      */
     newToken(components: Buffer[] | Buffer | string): token.Token {
         throw new Error("TODO: Not implemented");
@@ -160,9 +175,9 @@ class Metadata {
 
     /**
      * Constructs a TokenRange from the given start and end tokens.
-     * @param start The start token.
-     * @param end The end token.
-     * @returns build range spanning from start (exclusive) to end (inclusive).
+     * @param {token.Token} start The start token.
+     * @param {token.Token} end The end token.
+     * @returns {token.TokenRange} Build range spanning from start (exclusive) to end (inclusive).
      */
     newTokenRange(start: token.Token, end: token.Token): token.TokenRange {
         throw new Error("TODO: Not implemented");
@@ -170,40 +185,44 @@ class Metadata {
 
     /**
      * Gets the definition of an user-defined type.
-     * @param keyspaceName Name of the keyspace.
-     * @param name Name of the UDT.
-     * @returns The UDT definition, or `null` if it does not exist.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} name Name of the UDT.
+     * @returns {Udt | null} The UDT definition, or `null` if it does not exist.
      */
     getUdt(keyspaceName: string, name: string): Udt | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getUdt(keyspaceName, name);
     }
 
     /**
      * Gets the definition of a table.
-     * @param keyspaceName Name of the keyspace.
-     * @param name Name of the Table.
-     * @returns The table metadata, or `null` if it does not exist.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} name Name of the Table.
+     * @returns {TableMetadata | null} The table metadata, or `null` if it does not exist.
      */
     getTable(keyspaceName: string, name: string): TableMetadata | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getTable(keyspaceName, name);
     }
 
     /**
      * Gets the definition of CQL functions for a given name.
-     * @param keyspaceName Name of the keyspace.
-     * @param name Name of the Function.
-     * @returns An array of schema function metadata.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} name Name of the Function.
+     * @returns {ReadonlyArray<SchemaFunction>} An array of schema function metadata.
      */
-    getFunctions(keyspaceName: string, name: string): SchemaFunction[] {
+    getFunctions(
+        keyspaceName: string,
+        name: string,
+    ): readonly SchemaFunction[] {
         throw new Error("TODO: Not implemented");
     }
 
     /**
      * Gets a definition of CQL function for a given name and signature.
-     * @param keyspaceName Name of the keyspace.
-     * @param name Name of the Function.
-     * @param signature Array of types of the parameters.
-     * @returns The schema function metadata, or `null` if it does not exist.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} name Name of the Function.
+     * @param {string[] | ColumnInfo[]} signature Array of types of the parameters.
+     * @returns {SchemaFunction | null} The schema function metadata, or `null` if it does not
+     * exist.
      */
     getFunction(
         keyspaceName: string,
@@ -215,20 +234,20 @@ class Metadata {
 
     /**
      * Gets the definition of CQL aggregate for a given name.
-     * @param keyspaceName Name of the keyspace.
-     * @param name Name of the aggregate.
-     * @returns An array of schema aggregate metadata.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} name Name of the aggregate.
+     * @returns {ReadonlyArray<Aggregate>} An array of schema aggregate metadata.
      */
-    getAggregates(keyspaceName: string, name: string): Aggregate[] {
+    getAggregates(keyspaceName: string, name: string): readonly Aggregate[] {
         throw new Error("TODO: Not implemented");
     }
 
     /**
      * Gets a definition of CQL aggregate for a given name and signature.
-     * @param keyspaceName Name of the keyspace.
-     * @param name Name of the aggregate.
-     * @param signature Array of types of the parameters.
-     * @returns The schema aggregate metadata, or `null` if it does not exist.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} name Name of the aggregate.
+     * @param {string[] | ColumnInfo[]} signature Array of types of the parameters.
+     * @returns {Aggregate | null} The schema aggregate metadata, or `null` if it does not exist.
      */
     getAggregate(
         keyspaceName: string,
@@ -244,15 +263,16 @@ class Metadata {
      * Note that, unlike the rest of the {@link Metadata} methods, this method does not cache the result for following
      * calls, as the current version of the Cassandra native protocol does not support schema change events for
      * materialized views. Each call to this method will produce one or more queries to the cluster.
-     * @param keyspaceName Name of the keyspace
-     * @param name Name of the materialized view
-     * @returns The materialized view definition, or `null` if it does not exist.
+     * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} name Name of the materialized view.
+     * @returns {MaterializedView | null} The materialized view definition, or `null` if it does
+     * not exist.
      */
     getMaterializedView(
         keyspaceName: string,
         name: string,
     ): MaterializedView | null {
-        throw new Error("TODO: Not implemented");
+        return this.#rustClient.getMaterializedView(keyspaceName, name);
     }
 
     /**
@@ -260,9 +280,9 @@ class Metadata {
      * query. The trace itself is stored in Cassandra in the `sessions` and
      * `events` table in the `system_traces` keyspace and can be
      * retrieve manually using the trace identifier.
-     * @param traceId Identifier of the trace session.
-     * @param consistency The consistency level to obtain the trace.
-     * @returns The trace session, or `null` if it does not exist.
+     * @param {types.Uuid} traceId Identifier of the trace session.
+     * @param {types.consistencies} [consistency] The consistency level to obtain the trace.
+     * @returns {QueryTrace | null} The trace session, or `null` if it does not exist.
      */
     getTrace(
         traceId: types.Uuid,
@@ -276,8 +296,9 @@ class Metadata {
      *
      * This method performs a one-time check only, without any form of retry; therefore
      * `protocolOptions.maxSchemaAgreementWaitSeconds` setting does not apply in this case.
-     * @returns `true` when all hosts agree on the schema and `false` when there is no agreement or when
-     * the check could not be performed (for example, if the control connection is down).
+     * @returns {boolean} `true` when all hosts agree on the schema and `false` when there is no
+     * agreement or when the check could not be performed (for example, if the control connection
+     * is down).
      */
     checkSchemaAgreement(): boolean {
         throw new Error("TODO: Not implemented");

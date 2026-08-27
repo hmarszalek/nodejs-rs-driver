@@ -10,53 +10,53 @@ class SchemaFunction {
     /**
      * Name of the cql function.
      */
-    name: string | null;
+    readonly name: string | null;
 
     /**
      * Name of the keyspace where the cql function is declared.
      */
-    keyspaceName: string | null;
+    readonly keyspaceName: string | null;
 
     /**
      * Signature of the function.
      */
-    signature: string[] | null;
+    readonly signature: readonly string[] | null;
 
     /**
      * List of the function argument names.
      */
-    argumentNames: string[] | null;
+    readonly argumentNames: readonly string[] | null;
 
     /**
      * List of the function argument types.
      */
-    argumentTypes: ColumnInfo[] | null;
+    readonly argumentTypes: readonly ColumnInfo[] | null;
 
     /**
      * Body of the function.
      */
-    body: string | null;
+    readonly body: string | null;
 
     /**
      * Determines if the function is called when the input is null.
      */
-    calledOnNullInput: boolean | null;
+    readonly calledOnNullInput: boolean | null;
 
     /**
      * Name of the programming language, for example: java, javascript, ...
      */
-    language: string | null;
+    readonly language: string | null;
 
     /**
      * Type of the return value.
      */
-    returnType: ColumnInfo | null;
+    readonly returnType: ColumnInfo | null;
 
     /**
      * Indicates whether or not this function is deterministic.  This means that
      * given a particular input, the function will always produce the same output.
      */
-    deterministic: boolean | null;
+    readonly deterministic: boolean | null;
 
     /**
      * Indicates whether or not this function is monotonic on all of its
@@ -68,7 +68,7 @@ class SchemaFunction {
      *
      * Monotonicity is required to use the function in a GROUP BY clause.
      */
-    monotonic: boolean | null;
+    readonly monotonic: boolean | null;
 
     /**
      * The argument names that the function is monotonic on.
@@ -76,7 +76,7 @@ class SchemaFunction {
      * If {@link monotonic} is true, this will return all argument names.
      * Otherwise, this will return either one argument or an empty array.
      */
-    monotonicOn: string[] | null;
+    readonly monotonicOn: readonly string[] | null;
 
     /**
      * Creates a new SchemaFunction.

@@ -1,6 +1,7 @@
 "use strict";
 
 import { TableMetadata, ColumnMetadata } from "./table-metadata";
+import rust = require("../../index");
 
 /**
  * Describes a CQL materialized view.
@@ -11,9 +12,17 @@ class MaterializedView extends TableMetadata {
     /**
      * Name of the table.
      */
-    tableName: string;
+    readonly tableName: string;
 
     /**
+     * Constructs a MaterializedView instance.
+     *
+     * Instances of this class are constructed directly from the native code when reading cluster metadata.
+     * @param {Record<string, ColumnMetadata>} columns Columns of the view, keyed by name.
+     * @param {string[]} partitionKey Names of the view's partition key columns.
+     * @param {string[]} clusteringKey Names of the view's clustering key columns.
+     * @param {string | null} partitioner Partitioner of the view, if it overrides the default.
+     * @param {string} tableName Name of the table the view is built from.
      * @internal
      * @ignore
      */
@@ -30,3 +39,7 @@ class MaterializedView extends TableMetadata {
 }
 
 export { MaterializedView };
+
+// Registers the MaterializedView constructor, so that Rust can construct
+// fully-formed instances directly when reading cluster metadata.
+rust.registerMaterializedViewCtor(MaterializedView);

@@ -238,6 +238,127 @@ raw `Buffer`.
 
 If your code called any of these, remove the call, as there is no plan to support them in the future.
 
+### Schema
+
+The schema metadata API was rewritten from scratch, and almost nothing carries over unchanged.
+See the [Schema Metadata](../metadata/metadata.md) page for the full description of the new API;
+this section lists what changes for you as a caller.
+
+#### Everything is synchronous now
+
+In the `cassandra-driver`, schema lookups queried the `system_schema` tables on demand, so they
+were asynchronous and took a callback or returned a promise. This driver keeps a schema snapshot
+in memory, refreshed in the background, so every lookup returns the value directly:
+
+```javascript
+// cassandra-driver
+const table = await client.metadata.getTable("ks", "tbl");
+client.metadata.getTable("ks", "tbl", (err, table) => { /* ... */ });
+
+// ScyllaDB Node.js RS Driver
+const table = client.metadata.getTable("ks", "tbl");
+```
+
+#### `metadata.keyspaces` is replaced by `getKeyspace()` / `getKeyspaces()`
+
+The `keyspaces` property, a plain object keyed by keyspace name, no longer exists:
+
+```javascript
+// cassandra-driver
+const ks = client.metadata.keyspaces["ks"];
+const all = Object.values(client.metadata.keyspaces);
+
+// ScyllaDB Node.js RS Driver
+const ks = client.metadata.getKeyspace("ks"); // null if absent
+const all = client.metadata.getKeyspaces(); // Readonly<Record<string, KeyspaceMetadata>>
+```
+
+`getKeyspaces()` returns a read-only object keyed by keyspace name, like the old `keyspaces`
+property, so `Object.entries()` still iterates it. Unlike the old property it is not refreshed by
+hand: within one cluster state the same record is returned on every call, and a schema change
+replaces it.
+
+`KeyspaceMetadata` has `strategy`, `durableWrites`, `tables`, `views` and `udts`.
+
+#### Replication strategy is an object, not a class name plus options
+
+The `cassandra-driver` reported the strategy as the server's Java class name and a bag of options
+whose values were strings. It is now a discriminated union, with the replication factors as
+numbers:
+
+```javascript
+// cassandra-driver
+ks.strategy; // "org.apache.cassandra.locator.NetworkTopologyStrategy"
+ks.strategyOptions; // { dc1: "3" }
+
+// ScyllaDB Node.js RS Driver
+ks.strategy.kind; // StrategyKind.NetworkTopologyStrategy
+ks.strategy.datacenterRepfactors; // { dc1: 3 }
+```
+
+`strategyOptions` is gone; each variant carries its own fields – `replicationFactor` for
+`SimpleStrategy`, `datacenterRepfactors` for `NetworkTopologyStrategy`, nothing for
+`LocalStrategy`, and `name`/`data` for a strategy the driver does not recognise. Switch on
+`kind` (a `StrategyKind` value) to pick the variant.
+
+#### Iterating columns changes shape
+
+```javascript
+// cassandra-driver
+table.columns.forEach((column) => console.log(column.name, column.type.code));
+
+// ScyllaDB Node.js RS Driver
+for (const [name, column] of Object.entries(table.columns)) {
+  console.log(name, column.type.code, column.kind);
+}
+```
+
+Looking up the partition key columns changes too, since the keys are now names:
+
+```javascript
+// cassandra-driver
+const pkTypes = table.partitionKeys.map((column) => column.type);
+
+// ScyllaDB Node.js RS Driver
+const pkTypes = table.partitionKey.map((name) => table.columns[name].type);
+```
+
+Table storage options – `caching`, `comment`, `compactionClass`, `compactionOptions`,
+`compression`, `defaultTtl`, `gcGraceSeconds`, `id`, `bloomFilterFalsePositive`,
+`speculativeRetry`, `extensions`, `indexes` and the rest – are not exposed. Query
+`system_schema` directly if you need any of them.
+
+#### Materialized views and user-defined types
+
+`MaterializedView` still extends the table metadata and still has `tableName`, but
+`whereClause` and `includeAllColumns` are not exposed.
+
+`Udt` keeps `name` and `fields` (an array of `{ name, type }`) and gains `keyspace`.
+
+#### Metadata objects are cached, shared and read-only
+
+`client.metadata` is a live view of the state of the cluster, and everything it returns
+is a snapshot of it: within one snapshot the same object comes back every time, both
+for the schema objects and for the records holding them.
+
+```javascript
+const keyspace = client.metadata.getKeyspace("ks");
+
+keyspace.getTable("tbl") === keyspace.tables["tbl"]; // true
+keyspace.tables === keyspace.tables; // true
+```
+
+:::{caution}
+`client.metadata` being live means two calls on it may not see the same cluster state, since a
+background refresh can land between them. Objects reached through one `KeyspaceMetadata` are
+always mutually consistent; separate `client.metadata` calls are not guaranteed to be. If you need
+a consistent view, take the keyspace once and work from it.
+:::
+
+Because those instances are shared, they are read-only to full depth: fields cannot be reassigned,
+records cannot gain entries, and `partitionKey`, `clusteringKey` and `fields` are readonly arrays.
+In TypeScript this is enforced at compile time.
+
 ## Logging
 
 See the [Logging](../logging/logging.md) page for the full documentation of the new logging system.

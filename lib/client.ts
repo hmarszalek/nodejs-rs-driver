@@ -36,9 +36,9 @@ import type {
     ArrayOrObject,
     CqlValue,
     Host,
-    metadata as metadataModule,
     metrics as metricsModule,
 } from "../";
+import * as metadataModule from "./metadata";
 
 const { ProfileManager } = executionProfile;
 const description = packageInfo.description;
@@ -126,7 +126,8 @@ class Client extends events.EventEmitter {
     isShuttingDown: boolean;
     /**
      * Gets the schema and cluster metadata information.
-     * TODO: This field is currently not supported
+     *
+     * It is set once the client is connected.
      */
     metadata: metadataModule.Metadata | undefined;
     /**
@@ -337,6 +338,7 @@ class Client extends events.EventEmitter {
             this.rustClient = await rust.SessionWrapper.createSession(
                 this.rustOptions,
             );
+            this.metadata = new metadataModule.Metadata(this.rustClient);
         } catch (err) {
             // We should close the pools (if any) and reset the state to allow successive calls to connect()
             this.connected = false;
