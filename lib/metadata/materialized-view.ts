@@ -14,6 +14,13 @@ class MaterializedView extends TableMetadata {
     tableName: string;
 
     /**
+     * Constructs a MaterializedView instance.
+     *
+     * @param {Record<string, ColumnMetadata>} columns Columns of the view, keyed by name.
+     * @param {string[]} partitionKey Names of the view's partition key columns.
+     * @param {string[]} clusteringKey Names of the view's clustering key columns.
+     * @param {string | null} partitioner Partitioner of the view, if it overrides the default.
+     * @param {string} tableName Name of the table the view is built from.
      * @internal
      * @ignore
      */

@@ -34,6 +34,10 @@ class ColumnMetadata {
     kind: ColumnKind;
 
     /**
+     * Constructs a ColumnMetadata instance.
+     *
+     * @param {rust.ComplexType} typ CQL type of the column.
+     * @param {ColumnKind} kind Role the column plays in the table.
      * @internal
      * @ignore
      */
@@ -73,6 +77,12 @@ class TableMetadata {
     partitioner: string | null;
 
     /**
+     * Constructs a TableMetadata instance.
+     *
+     * @param {Record<string, ColumnMetadata>} columns Columns of the table, keyed by name.
+     * @param {string[]} partitionKey Names of the partition key columns.
+     * @param {string[]} clusteringKey Names of the clustering key columns.
+     * @param {string | null} partitioner Partitioner of the table, if it overrides the default.
      * @internal
      * @ignore
      */

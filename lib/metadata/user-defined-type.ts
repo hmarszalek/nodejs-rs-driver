@@ -18,6 +18,10 @@ class UdtField {
     type: ColumnInfo;
 
     /**
+     * Constructs a UdtField instance.
+     *
+     * @param {string} name Name of the field.
+     * @param {ColumnInfo} typ CQL type of the field.
      * @internal
      * @ignore
      */
@@ -49,6 +53,11 @@ class Udt {
     fields: UdtField[];
 
     /**
+     * Constructs a UserDefinedType instance.
+     *
+     * @param {string} name Name of the type.
+     * @param {string} keyspace Name of the keyspace the type belongs to.
+     * @param {UdtField[]} fields Fields the type is composed of, in declaration order.
      * @internal
      * @ignore
      */
