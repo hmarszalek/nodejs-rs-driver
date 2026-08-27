@@ -3,10 +3,6 @@
 import types = require("./types");
 import util = require("util");
 
-const _Murmur3TokenType = { code: types.dataTypes.bigint };
-const _RandomTokenType = { code: types.dataTypes.varint };
-const _OrderedTokenType = { code: types.dataTypes.blob };
-
 /**
  * The type info of the value of a token.
  */
@@ -56,58 +52,6 @@ class Token {
 
     inspect(): string {
         return this.constructor.name + " { " + this.toString() + " }";
-    }
-}
-
-/**
- * Represents a token from a Cassandra ring where the partitioner
- * is Murmur3Partitioner.
- *
- * The raw token type is a varint (represented by MutableLong).
- */
-class Murmur3Token extends Token {
-    constructor(value: any) {
-        super(value);
-    }
-
-    getType(): TokenType {
-        return _Murmur3TokenType;
-    }
-}
-
-/**
- * Represents a token from a Cassandra ring where the partitioner
- * is RandomPartitioner.
- *
- * The raw token type is a bigint (represented by Number).
- */
-class RandomToken extends Token {
-    constructor(value: any) {
-        super(value);
-    }
-
-    getType(): TokenType {
-        return _RandomTokenType;
-    }
-}
-
-/**
- * Represents a token from a Cassandra ring where the partitioner
- * is ByteOrderedPartitioner.
- *
- * The raw token type is a blob (represented by Buffer or Array).
- */
-class ByteOrderedToken extends Token {
-    constructor(value: any) {
-        super(value);
-    }
-
-    getType(): TokenType {
-        return _OrderedTokenType;
-    }
-
-    toString(): string {
-        return this.getValue().toString("hex").toUpperCase();
     }
 }
 
@@ -295,4 +239,4 @@ class TokenRange {
     }
 }
 
-export { Token, Murmur3Token, RandomToken, ByteOrderedToken, TokenRange };
+export { Token, TokenRange };
