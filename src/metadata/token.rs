@@ -6,7 +6,7 @@ use scylla::serialize::row::{RowSerializationContext, SerializeRow};
 use scylla::serialize::value::SerializeValue;
 use scylla::serialize::writers::RowWriter;
 
-use crate::errors::{ConvertedError, JsResult, with_custom_error_sync};
+use crate::errors::{ConvertedError, ConvertedResult, JsResult, with_custom_error_sync};
 use crate::session::SessionWrapper;
 use crate::types::encoded_data::EncodedValuesWrapper;
 use crate::utils::js_ctor::{build_token, js_constructible_class};
@@ -61,6 +61,32 @@ impl SessionWrapper {
                     .compute_token(&keyspace, &table, &partition_key)?;
                 let value = BigInt::from(token.value());
                 build_token(env, FnArgs::from((value,))).map_err(ConvertedError::from)
+            })
+        })
+    }
+}
+
+#[napi]
+impl SessionWrapper {
+    /// Returns every token of the cluster's token ring, sorted ascending. Each adjacent pair is one
+    /// range of the ring, the last pair wrapping from the highest token back to the lowest.
+    #[napi(ts_return_type = "import('./lib/token').Token[]")]
+    pub fn get_ring_tokens<'env>(
+        &self,
+        env: &'env Env,
+    ) -> JsResult<Vec<JsInstance<'env, js_constructible_class::Token>>> {
+        with_custom_error_sync(|| {
+            self.with_cluster_snapshot(env, |snapshot| {
+                snapshot
+                    .inner
+                    .replica_locator()
+                    .ring()
+                    .iter()
+                    .map(|(token, _)| {
+                        build_token(env, FnArgs::from((BigInt::from(token.value()),)))
+                            .map_err(ConvertedError::from)
+                    })
+                    .collect::<ConvertedResult<Vec<_>>>()
             })
         })
     }
