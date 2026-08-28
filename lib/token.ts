@@ -6,15 +6,15 @@ import util = require("util");
 /**
  * The type info of the value of a token.
  */
-type TokenType = { code: types.dataTypes };
+type TokenType = { code: types.dataTypes.bigint; info: any };
 
 /**
  * Represents a token on the Cassandra ring.
  */
 class Token {
-    #value: any;
+    #value: bigint;
 
-    constructor(value: any) {
+    constructor(value: bigint) {
         this.#value = value;
     }
 
@@ -22,15 +22,13 @@ class Token {
      * Returns the type info for the type of the value of the token.
      */
     getType(): TokenType {
-        throw new Error(
-            "You must implement a getType function for this Token instance",
-        );
+        return { code: types.dataTypes.bigint, info: null };
     }
 
     /**
      * Returns the raw value of the token.
      */
-    getValue(): any {
+    getValue(): bigint {
         return this.#value;
     }
 
@@ -43,7 +41,11 @@ class Token {
      * otherwise.
      */
     compare(other: Token): number {
-        return this.#value.compare(other.#value);
+        const otherValue = other.getValue();
+        if (this.getValue() < otherValue) {
+            return -1;
+        }
+        return this.getValue() > otherValue ? 1 : 0;
     }
 
     equals(other: Token): boolean {
