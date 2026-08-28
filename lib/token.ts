@@ -2,6 +2,7 @@
 
 import types = require("./types");
 import util = require("util");
+import rust = require("../index");
 
 /**
  * The type info of the value of a token.
@@ -289,3 +290,7 @@ class TokenRange {
 }
 
 export { Token, TokenRange };
+
+// Registers the Token constructor, so that Rust can hand back already-parsed tokens as
+// real Token instances directly.
+rust.registerTokenCtor(Token);
