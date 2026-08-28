@@ -9,7 +9,7 @@ import { EmptyCallback, ValueCallback } from "../..";
 // TODO: remove once `lib/promise-utils.js` is converted to typescript.
 // @ts-ignore
 import promiseUtils = require("../promise-utils");
-import { Token, TokenRange } from "../token";
+import { Token, TokenRange, minTokenRange } from "../token";
 import { Host } from "../host";
 import types = require("../types");
 import { ColumnInfo } from "../types/cql-utils";
@@ -97,7 +97,22 @@ class Metadata {
      * @returns {Set<TokenRange>} The ranges of the ring or empty set if schema metadata is not enabled.
      */
     getTokenRanges(): Set<TokenRange> {
-        throw new Error("TODO: Not implemented");
+        let ringTokens = this.#rustClient.getRingTokens();
+        const tokenRanges = new Set<TokenRange>();
+        if (ringTokens.length === 1) {
+            // A single token owns the whole ring, that is the range ]minToken, minToken].
+            tokenRanges.add(minTokenRange());
+            return tokenRanges;
+        }
+        for (let i = 0; i < ringTokens.length; i++) {
+            tokenRanges.add(
+                new TokenRange(
+                    ringTokens[i],
+                    ringTokens[(i + 1) % ringTokens.length],
+                ),
+            );
+        }
+        return tokenRanges;
     }
 
     /**

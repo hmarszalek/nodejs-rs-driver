@@ -289,7 +289,11 @@ class TokenRange {
     }
 }
 
-export { Token, TokenRange };
+function minTokenRange(): TokenRange {
+    return new TokenRange(_minToken, _minToken);
+}
+
+export { Token, TokenRange, minTokenRange };
 
 // Registers the Token constructor, so that Rust can hand back already-parsed tokens as
 // real Token instances directly.
