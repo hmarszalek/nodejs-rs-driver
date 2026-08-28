@@ -359,6 +359,39 @@ Because those instances are shared, they are read-only to full depth: fields can
 records cannot gain entries, and `partitionKey`, `clusteringKey` and `fields` are readonly arrays.
 In TypeScript this is enforced at compile time.
 
+### Query tracing
+
+See the [Query Tracing](../tracing/tracing.md) page for the full description of the tracing API.
+Below are the key differences from the `cassandra-driver`.
+
+The returned `QueryTrace` keeps the shape it had in the `cassandra-driver` – `requestType`,
+`coordinator`, `parameters`, `startedAt`, `duration`, `clientAddress` and `events`, with each event
+carrying `id`, `activity`, `source`, `elapsed` and `thread`. A trace that cannot be read still
+reports an error rather than resolving to `null`.
+
+#### Type changes
+
+`startedAt` is a `Date` (instead of the previous `number`), both `coordinator` and `clientAddress` are
+`InetAddress` instances, and each event's `id` is a `TimeUuid` (previously `Uuid`).
+
+#### Trace objects are read-only
+
+Unlike the plain objects the `cassandra-driver` returned, every field of `QueryTrace` and
+`TracingEvent` is `readonly`, and `events` is a readonly array. Nothing about a trace is meant to be
+edited after it is read; in TypeScript this is enforced at compile time.
+
+#### The `consistency` argument has no effect
+
+`getTrace()` still accepts an optional consistency level between the trace id and the callback, so
+existing call sites keep compiling and running:
+
+```javascript
+const trace = await client.metadata.getTrace(traceId, types.consistencies.all);
+```
+
+It is accepted for compatibility only and is not plumbed through to the request, so the trace is
+read at the driver's own consistency level regardless of what you pass.
+
 ## Logging
 
 See the [Logging](../logging/logging.md) page for the full documentation of the new logging system.

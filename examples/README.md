@@ -53,8 +53,8 @@ Those examples are present in this directory and have the `.broken` in the name 
   - [Working with tuples](tuple/tuple-insert-select.js)
   - [Working with vectors](vector/vector-insert-select.js)
   - [Vector search with ANN similarity queries](vector/vector-search-ann.js)
-<!-- - Query tracing
-  - [Retrieving the trace of a query request](tracing/retrieve-query-trace.js) -->
+- Query tracing
+  - [Retrieving the trace of a query request](tracing/retrieve-query-trace.js)
 - Concurrent execution
   - [Insert multiple rows in a table from an Array using built-in
     method](concurrent-executions/execute-concurrent-array.js)

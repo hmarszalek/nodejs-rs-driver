@@ -15,5 +15,7 @@ schema-index.js
 schema-index.d.ts
 client-state.js
 client-state.d.ts
+query-trace.js
+query-trace.d.ts
 index.js
 index.d.ts
