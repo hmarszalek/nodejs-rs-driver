@@ -115,13 +115,27 @@ class Metadata {
     }
 
     /**
-     * Constructs a Token from the input buffer(s) or string input. If a string is passed in
-     * it is assumed this matches the token representation reported by cassandra.
-     * @param {Buffer[] | Buffer | string} components The token components.
+     * Constructs a Token from the input buffer(s)
+     *
+     * The token of a partition key is computed by the Rust driver, which reads the partitioner
+     * from the table's own metadata, so the components have to be the values of that table's
+     * partition key columns, in the order the table declares them, each already serialized with
+     * the CQL type of its column.
+     * @param {Buffer[] | Buffer} components The token components.
+     * @param {string} keyspaceName Name of the keyspace the table belongs to.
+     * @param {string} tableName Name of the table the partition key belongs to.
      * @returns {Token} Constructed token from the input buffer.
      */
-    newToken(components: Buffer[] | Buffer | string): Token {
-        throw new Error("TODO: Not implemented");
+    newToken(
+        components: Buffer[] | Buffer,
+        keyspaceName: string,
+        tableName: string,
+    ): Token {
+        return this.#rustClient.computeToken(
+            Array.isArray(components) ? components : [components],
+            keyspaceName,
+            tableName,
+        );
     }
 
     /**
@@ -131,7 +145,7 @@ class Metadata {
      * @returns {TokenRange} Build range spanning from start (exclusive) to end (inclusive).
      */
     newTokenRange(start: Token, end: Token): TokenRange {
-        throw new Error("TODO: Not implemented");
+        return new TokenRange(start, end);
     }
 
     /**
