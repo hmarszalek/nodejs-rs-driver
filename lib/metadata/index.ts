@@ -42,17 +42,6 @@ export { StrategyKind } from "./strategy";
 export { ClientState };
 
 /**
- * @const
- * @private
- */
-const _selectSchemaVersionPeers = "SELECT schema_version FROM system.peers";
-/**
- * @const
- * @private
- */
-const _selectSchemaVersionLocal = "SELECT schema_version FROM system.local";
-
-/**
  * Represents cluster and schema information.
  * The metadata class acts as a internal state of the driver.
  */
