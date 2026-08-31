@@ -4,7 +4,9 @@ description: "Runs integration tests on a single architecture and node version"
 inputs:
   build-command:
     required: true
-    type: string
+  scylla-arch:
+    description: "Architecture of the ScyllaDB package installed by CCM"
+    required: true
 
 runs:
   using: "composite"
@@ -29,11 +31,13 @@ runs:
       env:
         CCM_IS_SCYLLA: "true"
         CCM_PATH: "./scylla-ccm"
+        SCYLLA_ARCH: ${{ inputs.scylla-arch }}
       shell: bash
       run: npm run integration
     - name: Run integration tests on scylla with expose-gc
       env:
         CCM_IS_SCYLLA: "true"
         CCM_PATH: "./scylla-ccm"
+        SCYLLA_ARCH: ${{ inputs.scylla-arch }}
       shell: bash
       run: npm run integration-gc

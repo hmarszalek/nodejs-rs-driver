@@ -31,7 +31,10 @@ jobs:
         settings:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            build: npm run build:test -- --target x86_64-unknown-linux-gnu
+            scylla_arch: x86_64
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            scylla_arch: aarch64
     name: Build and run integration tests - ${{ matrix.settings.target }} - node@20
     runs-on: ${{ matrix.settings.host }}
     timeout-minutes: 60
@@ -44,4 +47,5 @@ jobs:
           node-version: 20
       - uses: ./.github/common/integration
         with:
-          build-command: ${{ matrix.settings.build }}
+          build-command: npm run build:test -- --target ${{ matrix.settings.target }}
+          scylla-arch: ${{ matrix.settings.scylla_arch }}

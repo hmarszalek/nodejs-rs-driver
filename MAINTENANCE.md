@@ -75,14 +75,15 @@ launched through CCM. Split between regular and extended CI is not yet decided.
 
 #### Integration tests
 
-|               | Linux x64  | Linux arm**| MacOS Intel  | MacOS Arm  |
+ARM and x64 run the same integration test suites. ARM uses Node 20 to verify architecture-specific
+behavior, while the extended x64 matrix verifies compatibility with every supported Node version.
+
+|               | Linux x64  | Linux arm  | MacOS Intel  | MacOS Arm  |
 |-------------- |----------- |----------- |------------- |----------- |
-| Node 20       | ✅         | ❌         | ❌ (planned) | ❌         |
+| Node 20       | ✅         | ✅         | ❌ (planned) | ❌         |
 | Node 22       | 🟠         | ❌         | ❌ (planned) | ❌         |
 | Node 24       | 🟠         | ❌         | ❌ (planned) | ❌         |
 | Node current  | 🟠         | ❌         | ❌ (planned) | ❌         |
-
-**) Disabled due to problems with ccm
 
 ## Releasing process
 

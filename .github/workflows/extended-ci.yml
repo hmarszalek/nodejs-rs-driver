@@ -46,21 +46,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        settings:
+        host:
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+        node: [ 20, 22, 24, current ]
+        include:
           - host: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            build: npm run build -- --target x86_64-unknown-linux-gnu
-        node: [ 20, 22, 24, current ]
-    name: Build and run integration tests - ${{ matrix.settings.target }} - node@${{ matrix.node }}
-    runs-on: ${{ matrix.settings.host }}
+            scylla_arch: x86_64
+          - host: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            scylla_arch: aarch64
+        exclude:
+          - host: ubuntu-24.04-arm
+            node: 22
+          - host: ubuntu-24.04-arm
+            node: 24
+          - host: ubuntu-24.04-arm
+            node: current
+    name: Build and run integration tests - ${{ matrix.target }} - node@${{ matrix.node }}
+    runs-on: ${{ matrix.host }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: ./.github/common/setup
         with:
-          host: ${{ matrix.settings.host }}
-          target: ${{ matrix.settings.target }}
+          host: ${{ matrix.host }}
+          target: ${{ matrix.target }}
           node-version: ${{ matrix.node }}
       - uses: ./.github/common/integration
         with:
-          build-command: ${{ matrix.settings.build }}
+          build-command: npm run build:test -- --target ${{ matrix.target }}
+          scylla-arch: ${{ matrix.scylla_arch }}
