@@ -311,7 +311,10 @@ class Metadata {
     checkSchemaAgreement(
         callback?: ValueCallback<boolean>,
     ): Promise<boolean> | void {
-        throw new Error("TODO: Not implemented");
+        return promiseUtils.optionalCallback(
+            this.#rustClient.checkSchemaAgreement(),
+            callback,
+        );
     }
 }
 
