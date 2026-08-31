@@ -59,6 +59,7 @@ const options = {
     },
     protocolOptions: {
         maxSchemaAgreementWaitSeconds: 5,
+        autoAwaitSchemaAgreement: false,
     },
 };
 
