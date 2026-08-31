@@ -162,6 +162,21 @@ impl SessionWrapper {
         }
     }
 
+    /// Waits until all currently reachable nodes agree on the schema version.
+    ///
+    /// Unlike `check_schema_agreement`, which performs a single, non-retrying check and never
+    /// fails, this retries at the driver's `schema_agreement_interval` until agreement is
+    /// reached or `schema_agreement_timeout` elapses, rejecting if agreement could not be
+    /// reached in time - or could not be checked at all, for example if no node is reachable.
+    #[napi(ts_return_type = "Promise<void>")]
+    pub async fn wait_for_schema_agreement(&self) -> JsResult<()> {
+        with_custom_error_async(async || {
+            self.inner.get_session().await_schema_agreement().await?;
+            ConvertedResult::Ok(())
+        })
+        .await
+    }
+
     /// Executes unprepared statement. This assumes the types will be either guessed or provided by user.
     ///
     /// Returns a wrapper of the result provided by the rust driver

@@ -5,7 +5,7 @@
  * @module metadata
  */
 
-import { token, ValueCallback } from "../..";
+import { EmptyCallback, token, ValueCallback } from "../..";
 // TODO: remove once `lib/promise-utils.js` is converted to typescript.
 // @ts-ignore
 import promiseUtils = require("../promise-utils");
@@ -313,6 +313,24 @@ class Metadata {
     ): Promise<boolean> | void {
         return promiseUtils.optionalCallback(
             this.#rustClient.checkSchemaAgreement(),
+            callback,
+        );
+    }
+
+    /**
+     * Waits until all currently reachable hosts agree on the schema definition.
+     *
+     * This method actively checks whether schema agreement was established, for up to
+     * `protocolOptions.maxSchemaAgreementWaitSeconds` – rejecting if agreement is not reached
+     * within that time, or if the check could not be performed at all (for example, if no host
+     * is reachable).
+     * @param {Function} [callback] Executes callback(err) when execution completed. When not
+     * defined, the method will return a promise.
+     * @returns {Promise<void> | void}
+     */
+    waitForSchemaAgreement(callback?: EmptyCallback): Promise<void> | void {
+        return promiseUtils.optionalCallback(
+            this.#rustClient.waitForSchemaAgreement(),
             callback,
         );
     }
