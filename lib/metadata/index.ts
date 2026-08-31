@@ -302,11 +302,15 @@ class Metadata {
      *
      * This method performs a one-time check only, without any form of retry; therefore
      * `protocolOptions.maxSchemaAgreementWaitSeconds` setting does not apply in this case.
-     * @returns {boolean} `true` when all hosts agree on the schema and `false` when there is no
-     * agreement or when the check could not be performed (for example, if the control connection
-     * is down).
+     * @param {Function} [callback] Executes callback(err, agreement) when execution completed.
+     * When not defined, the method will return a promise.
+     * @returns {Promise<boolean> | void} `true` when all hosts agree on the schema and `false`
+     * when there is no agreement or when the check could not be performed (for example, if a
+     * host's connection is down).
      */
-    checkSchemaAgreement(): boolean {
+    checkSchemaAgreement(
+        callback?: ValueCallback<boolean>,
+    ): Promise<boolean> | void {
         throw new Error("TODO: Not implemented");
     }
 }
