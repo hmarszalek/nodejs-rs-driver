@@ -25,6 +25,7 @@ pub fn tests_check_client_option(options: SessionOptions, test_case: i32) {
                     credentials_username: Some("Unique username".to_owned()),
                     credentials_password: Some("Unique password".to_owned()),
                     cache_size: Some(2137),
+                    schema_agreement_timeout_secs: Some(5),
                     ssl_options: Some(SslOptions {
                         reject_unauthorized: Some(false),
                         ca: Some(vec!["CA cert 1".to_owned(), "CA cert 2".to_owned()]),
@@ -78,6 +79,7 @@ pub fn tests_check_client_option(options: SessionOptions, test_case: i32) {
                     credentials_username: None,
                     credentials_password: None,
                     cache_size: None,
+                    schema_agreement_timeout_secs: None,
                     ssl_options: None,
                     load_balancing_config: None,
                     retry_policy: None,
@@ -98,6 +100,7 @@ pub fn tests_check_client_option(options: SessionOptions, test_case: i32) {
                     credentials_username: Some("Unique username v2".to_owned()),
                     credentials_password: Some("Unique password v2".to_owned()),
                     cache_size: None,
+                    schema_agreement_timeout_secs: None,
                     ssl_options: None,
                     load_balancing_config: None,
                     retry_policy: None,
