@@ -128,4 +128,56 @@ describe("Client#hosts", function () {
             done();
         });
     });
+
+    describe("when cluster changes", function () {
+        const setupInfo = helper.setup("3:0");
+        const client = setupInfo.client;
+        let hostToTest;
+
+        before(function () {
+            hostToTest = helper.findHost(client, 3, true);
+        });
+
+        // Stop node 3 before the next test.
+        before((done) => helper.ccmHelper.stopNode(3, done));
+
+        // Wait for the driver to detect that node 3 is down.
+        before(async () => await helper.wait.forNodeDown(client, 3));
+
+        it("should report a host as down when the node is stopped", function (done) {
+            assert.isFalse(
+                hostToTest.isUp(),
+                `Host ${hostToTest.addressToString()} should be down after stopping`,
+            );
+
+            // Verify other hosts are still up.
+            const hosts = client.hosts.values();
+            hosts.slice(1).forEach((host) => {
+                if (host.address.address !== hostToTest.address.address) {
+                    assert.isTrue(
+                        host.isUp(),
+                        `Host ${host.addressToString()} should still be up`,
+                    );
+                }
+            });
+
+            done();
+        });
+
+        context("when the node is restarted", function () {
+            // Restart node 3 before the next test.
+            before((done) => helper.ccmHelper.startNode(3, done));
+
+            // Wait for the driver to detect that node 3 is back up.
+            before(async () => await helper.wait.forNodeUp(client, 3));
+
+            it("should report a host as up again", function (done) {
+                assert.isTrue(
+                    hostToTest.isUp(),
+                    `Host ${hostToTest.addressToString()} should be up after restart`,
+                );
+                done();
+            });
+        });
+    });
 });
