@@ -9,6 +9,21 @@ import util = require("util");
 type TokenType = { code: types.dataTypes.bigint; info: any };
 
 /**
+ * Lowest value of the ring: not a valid token, but the exclusive start of the ring.
+ */
+const _minValue = BigInt("-9223372036854775808");
+/**
+ * Highest value of the ring, and its inclusive end.
+ */
+const _maxValue = BigInt("9223372036854775807");
+/**
+ * Number of values the ring spans, used to wrap around its end.
+ */
+const _ringLength = _maxValue - _minValue;
+const _zero = BigInt(0);
+const _one = BigInt(1);
+
+/**
  * Represents a token on the Cassandra ring.
  */
 class Token {
@@ -58,6 +73,54 @@ class Token {
 }
 
 /**
+ * The token the ring starts at, exclusively, and ends at, inclusively: the range
+ * ]minToken, minToken] covers the whole ring.
+ */
+const _minToken = new Token(_minValue);
+
+/**
+ * Splits the range ]start, end] into `numberOfSplits` parts of equal "size" (referring to the
+ * number of tokens, not the actual amount of data), returning the tokens the parts are split at.
+ *
+ * @param start Starting token.
+ * @param end End token.
+ * @param numberOfSplits Number of splits to make.
+ * @returns The `numberOfSplits - 1` points the range is split at.
+ */
+function _split(start: Token, end: Token, numberOfSplits: number): Token[] {
+    // The ring is spanned by 64 bit signed integers, whatever a token carries its value as.
+    const startValue: bigint = start.getValue();
+    // ]minToken, minToken] means the whole ring, which ends at the highest value of the ring.
+    const endValue: bigint =
+        start.equals(end) && start.equals(_minToken)
+            ? _maxValue
+            : end.getValue();
+
+    let range = endValue - startValue;
+    if (range < _zero) {
+        // The range wraps around the end of the ring.
+        range += _ringLength;
+    }
+
+    const splits = BigInt(numberOfSplits);
+    const divider = range / splits;
+    // The first `remainder` splits are one token larger, so that the splits add up to the range.
+    let remainder = range % splits;
+
+    const splitPoints: Token[] = [];
+    let current = startValue;
+    for (let i = 1; i < numberOfSplits; i++) {
+        current += remainder > _zero ? divider + _one : divider;
+        if (current > _maxValue) {
+            current -= _ringLength;
+        }
+        splitPoints.push(new Token(current));
+        remainder -= _one;
+    }
+    return splitPoints;
+}
+
+/**
  * Represents a range of tokens on a Cassandra ring.
  *
  * A range is start-exclusive and end-inclusive.  It is empty when
@@ -71,12 +134,10 @@ class Token {
 class TokenRange {
     start: Token;
     end: Token;
-    #tokenizer: any;
 
-    constructor(start: Token, end: Token, tokenizer: any) {
+    constructor(start: Token, end: Token) {
         this.start = start;
         this.end = end;
-        this.#tokenizer = tokenizer;
     }
 
     /**
@@ -104,11 +165,7 @@ class TokenRange {
         }
 
         const tokenRanges: TokenRange[] = [];
-        const splitPoints = this.#tokenizer.split(
-            this.start,
-            this.end,
-            numberOfSplits,
-        );
+        const splitPoints = _split(this.start, this.end, numberOfSplits);
         let splitStart = this.start;
         let splitEnd;
         for (
@@ -117,12 +174,10 @@ class TokenRange {
             splitIndex++
         ) {
             splitEnd = splitPoints[splitIndex];
-            tokenRanges.push(
-                new TokenRange(splitStart, splitEnd, this.#tokenizer),
-            );
+            tokenRanges.push(new TokenRange(splitStart, splitEnd));
             splitStart = splitEnd;
         }
-        tokenRanges.push(new TokenRange(splitStart, this.end, this.#tokenizer));
+        tokenRanges.push(new TokenRange(splitStart, this.end));
         return tokenRanges;
     }
 
@@ -135,10 +190,7 @@ class TokenRange {
      * @returns Whether this range is empty.
      */
     isEmpty(): boolean {
-        return (
-            this.start.equals(this.end) &&
-            !this.start.equals(this.#tokenizer.minToken())
-        );
+        return this.start.equals(this.end) && !this.start.equals(_minToken);
     }
 
     /**
@@ -149,10 +201,7 @@ class TokenRange {
      * @returns Whether this range wraps around.
      */
     isWrappedAround(): boolean {
-        return (
-            this.start.compare(this.end) > 0 &&
-            !this.end.equals(this.#tokenizer.minToken())
-        );
+        return this.start.compare(this.end) > 0 && !this.end.equals(_minToken);
     }
 
     /**
@@ -168,10 +217,9 @@ class TokenRange {
      */
     unwrap(): TokenRange[] {
         if (this.isWrappedAround()) {
-            const minToken = this.#tokenizer.minToken();
             return [
-                new TokenRange(this.start, minToken, this.#tokenizer),
-                new TokenRange(minToken, this.end, this.#tokenizer),
+                new TokenRange(this.start, _minToken),
+                new TokenRange(_minToken, this.end),
             ];
         }
         return [this];
@@ -187,11 +235,10 @@ class TokenRange {
         if (this.isEmpty()) {
             return false;
         }
-        const minToken = this.#tokenizer.minToken();
-        if (this.end.equals(minToken)) {
-            if (this.start.equals(minToken)) {
+        if (this.end.equals(_minToken)) {
+            if (this.start.equals(_minToken)) {
                 return true; // ]minToken, minToken] === full ring
-            } else if (token.equals(minToken)) {
+            } else if (token.equals(_minToken)) {
                 return true;
             }
             return token.compare(this.start) > 0;
