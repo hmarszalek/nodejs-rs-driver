@@ -616,9 +616,8 @@ const helper = {
             );
             before(client.connect.bind(client));
             keyspace = options.keyspace || helper.getRandomName("ks");
-            before(
-                helper.toTask(
-                    client.execute,
+            before(() =>
+                helper.ddl(
                     client,
                     helper.createKeyspaceCql(
                         keyspace,
@@ -628,14 +627,10 @@ const helper = {
             );
             before(helper.toTask(client.execute, client, "USE " + keyspace));
             if (options.queries) {
-                before(function (done) {
-                    utils.eachSeries(
-                        options.queries,
-                        function (q, next) {
-                            client.execute(q, next);
-                        },
-                        done,
-                    );
+                before(async function () {
+                    for (const query of options.queries) {
+                        await helper.ddl(client, query);
+                    }
                 });
             }
             after(client.shutdown.bind(client));
@@ -774,6 +769,20 @@ const helper = {
             replicationFactor || 1,
             !!durableWrites,
         );
+    },
+    /**
+     * Executes a DDL statement, that is a statement creating, altering or dropping
+     * a keyspace, a table or a type.
+     *
+     * ScyllaDB occasionally rejects concurrent schema changes with a group 0 error,
+     * so DDL statements are pinned to a single node/shard and retried on that same
+     * target when it happens.
+     */
+    ddl: async function (client, query) {
+        if (!client.connected) {
+            await client.connect();
+        }
+        return await rust.ddl(client.rustClient, query);
     },
     assertValueEqual: function (val1, val2) {
         if (val1 === null && val2 === null) {
@@ -965,6 +974,15 @@ const helper = {
         return function (next) {
             params.push(next);
             fn.apply(context, params);
+        };
+    },
+    /**
+     * Like `toTask`, but for a DDL statement: bridges `helper.ddl()` (which is Promise-based)
+     * into a Node-style task function.
+     */
+    toDdlTask: function (client, query) {
+        return function (next) {
+            helper.ddl(client, query).then(() => next(), next);
         };
     },
     waitCallback: function (ms, callback) {

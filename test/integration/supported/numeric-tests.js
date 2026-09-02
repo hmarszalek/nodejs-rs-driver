@@ -35,8 +35,8 @@ module.exports = function (keyspace, prepare) {
         });
 
         before(() => client.connect());
-        before(() => client.execute(createTableNumericValuesCql));
-        before(() => client.execute(createTableNumericCollectionsCql));
+        before(() => helper.ddl(client, createTableNumericValuesCql));
+        before(() => helper.ddl(client, createTableNumericCollectionsCql));
 
         it("should support setting numeric values using strings", () => {
             const insertQuery = `INSERT INTO tbl_numeric_values
@@ -177,7 +177,8 @@ module.exports = function (keyspace, prepare) {
 
         before(() => client.connect());
         before(() =>
-            client.execute(
+            helper.ddl(
+                client,
                 `CREATE TABLE tbl_integers (id1 text, id2 bigint, varint1 varint, list1 list<bigint>, set1 set<bigint>,
          set2 set<varint>, PRIMARY KEY ((id1, id2)))`,
             ),

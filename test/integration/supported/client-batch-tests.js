@@ -21,21 +21,12 @@ describe("Client @SERVER_API", function () {
             utils.series(
                 [
                     helper.ccmHelper.start(1),
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         helper.createKeyspaceCql(keyspace, 1),
                     ),
-                    helper.toTask(
-                        client.execute,
-                        client,
-                        helper.createTableCql(table1),
-                    ),
-                    helper.toTask(
-                        client.execute,
-                        client,
-                        helper.createTableCql(table2),
-                    ),
+                    helper.toDdlTask(client, helper.createTableCql(table1)),
+                    helper.toDdlTask(client, helper.createTableCql(table2)),
                 ],
                 done,
             );
@@ -579,18 +570,15 @@ describe("Client @SERVER_API", function () {
             utils.series(
                 [
                     helper.ccmHelper.start(3),
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         helper.createKeyspaceCql(keyspace, 3, false),
                     ),
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         util.format(createTableCql, table1),
                     ),
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         util.format(createTableCql, table2),
                     ),

@@ -185,8 +185,9 @@ describe("Client", function () {
                         ));
 
                 it("should return false when executing DDL queries", () =>
-                    client
-                        .execute(
+                    helper
+                        .ddl(
+                            client,
                             "CREATE KEYSPACE ks_rs_is_schema_in_agreement" +
                                 " WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor' : 1}",
                         )
@@ -208,7 +209,7 @@ describe("Client", function () {
 
                     utils.series(
                         [
-                            (next) => client.execute(createQuery, next),
+                            helper.toDdlTask(client, createQuery),
                             (next) =>
                                 client.metadata.checkSchemaAgreement(
                                     (err, agreement) => {

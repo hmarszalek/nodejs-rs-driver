@@ -360,13 +360,9 @@ describe("Client", function () {
                     },
                     function createKeyspace(next) {
                         const tempClient = newInstance();
-                        tempClient.execute(
-                            helper.createKeyspaceCql(keyspace),
-                            function (err) {
-                                assert.ifError(err);
-                                tempClient.shutdown(next);
-                            },
-                        );
+                        helper
+                            .ddl(tempClient, helper.createKeyspaceCql(keyspace))
+                            .then(() => tempClient.shutdown(next), next);
                     },
                     function tryConnectAgain(next) {
                         client.connect(function (err) {

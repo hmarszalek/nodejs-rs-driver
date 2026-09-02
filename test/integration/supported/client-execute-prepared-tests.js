@@ -401,8 +401,7 @@ describe("Client @SERVER_API", function () {
             const expectedRows = {};
             utils.series(
                 [
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         util.format(
                             "CREATE TABLE %s (id uuid primary key, val varint)",
@@ -472,8 +471,7 @@ describe("Client @SERVER_API", function () {
             const expectedRows = {};
             utils.series(
                 [
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         util.format(
                             "CREATE TABLE %s (id uuid primary key, val decimal)",
@@ -677,7 +675,7 @@ describe("Client @SERVER_API", function () {
             );
             utils.series(
                 [
-                    helper.toTask(client.execute, client, createTableCql),
+                    helper.toDdlTask(client, createTableCql),
                     function insertData(seriesNext) {
                         const query = util.format(
                             "INSERT INTO %s (id, map_text_text, map_int_date, map_date_float, map_varint_boolean, map_timeuuid_text) " +
@@ -794,7 +792,7 @@ describe("Client @SERVER_API", function () {
             );
             utils.series(
                 [
-                    helper.toTask(client.execute, client, createTableCql),
+                    helper.toDdlTask(client, createTableCql),
                     function insertData(seriesNext) {
                         const query = util.format(
                             "INSERT INTO %s (id, set_text, set_timestamp, set_float, set_bigint, set_timeuuid) " +
@@ -951,7 +949,7 @@ describe("Client @SERVER_API", function () {
             client.on("log", helper.log);
             utils.series(
                 [
-                    helper.toTask(client.execute, client, createTableCql),
+                    helper.toDdlTask(client, createTableCql),
                     function insert(next) {
                         const query =
                             "INSERT INTO tbl_nested (id, map1, list1) VALUES (?, ?, ?)";
@@ -1063,7 +1061,7 @@ describe("Client @SERVER_API", function () {
             );
             utils.series(
                 [
-                    helper.toTask(client.execute, client, createQuery),
+                    helper.toDdlTask(client, createQuery),
                     function (next) {
                         const query = util.format(
                             "SELECT * FROM %s WHERE c = ? AND a = ? AND b = 0",
@@ -1372,23 +1370,19 @@ describe("Client @SERVER_API", function () {
                 const client = setupInfo.client;
                 utils.series(
                     [
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TYPE phone (alias text, number text, country_code int, other boolean)",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             'CREATE TYPE address (street text, "ZIP" int, phones set<frozen<phone>>)',
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TABLE tbl_udts (id uuid PRIMARY KEY, phone_col frozen<phone>, address_col frozen<address>)",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TABLE tbl_tuples (id uuid PRIMARY KEY, tuple_col1 tuple<text,int>, tuple_col2 tuple<uuid,bigint,boolean>)",
                         ),
@@ -1892,16 +1886,14 @@ describe("Client @SERVER_API", function () {
                 const table = helper.getRandomName("tbl");
                 utils.series(
                     [
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             util.format(
                                 "CREATE TABLE %s (k int PRIMARY KEY, v int)",
                                 table,
                             ),
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             util.format(
                                 "CREATE INDEX simple_index ON %s (v)",
@@ -1965,16 +1957,14 @@ describe("Client @SERVER_API", function () {
                     const table = helper.getRandomName("tbl");
                     utils.series(
                         [
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE TABLE %s (k int PRIMARY KEY, v frozen<list<int>>)",
                                     table,
                                 ),
                             ),
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE INDEX frozen_index ON %s (full(v))",
@@ -2034,16 +2024,14 @@ describe("Client @SERVER_API", function () {
                     const table = helper.getRandomName("tbl");
                     utils.series(
                         [
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE TABLE %s (k int PRIMARY KEY, v map<text,int>)",
                                     table,
                                 ),
                             ),
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE INDEX keys_index on %s (keys(v))",
@@ -2126,16 +2114,14 @@ describe("Client @SERVER_API", function () {
                     const table = helper.getRandomName("tbl");
                     utils.series(
                         [
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE TABLE %s (k int PRIMARY KEY, v map<text,int>)",
                                     table,
                                 ),
                             ),
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE INDEX values_index on %s (v)",
@@ -2209,16 +2195,14 @@ describe("Client @SERVER_API", function () {
                     const table = helper.getRandomName("tbl");
                     utils.series(
                         [
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE TABLE %s (k int PRIMARY KEY, v map<text,int>)",
                                     table,
                                 ),
                             ),
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 util.format(
                                     "CREATE INDEX entries_index on %s (entries(v))",
@@ -2535,7 +2519,7 @@ function serializationTest(client, values, columns, done) {
     };
     utils.series(
         [
-            helper.toTask(client.execute, client, helper.createTableCql(table)),
+            helper.toDdlTask(client, helper.createTableCql(table)),
             function (next) {
                 let markers = "?";
                 const columnsSplit = columns.split(",");

@@ -176,7 +176,8 @@ describe("Worker threads with database queries @SERVER_API", function () {
         const stressTable = helper.getRandomName("tbl_stress");
 
         before(function () {
-            return setupInfo.client.execute(
+            return helper.ddl(
+                setupInfo.client,
                 `CREATE TABLE ${stressTable} (worker_id int, seq int, value text, PRIMARY KEY ((worker_id), seq))`,
             );
         });

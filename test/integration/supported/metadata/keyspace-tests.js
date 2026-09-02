@@ -21,13 +21,11 @@ describe("Metadata#getKeyspace()", function () {
         it("should return KeyspaceMetadata for created keyspace", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks.test_table (id uuid PRIMARY KEY, name varchar)",
                     ),
@@ -67,11 +65,7 @@ describe("Metadata#getKeyspace()", function () {
             );
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
-                        setupInfo.client,
-                        query,
-                    ),
+                    helper.toDdlTask(setupInfo.client, query),
                     function verifyKeyspace(next) {
                         const client = setupInfo.client;
                         const ks = client.metadata.getKeyspace("test_ss");
@@ -94,8 +88,7 @@ describe("Metadata#getKeyspace()", function () {
         it("should reflect keyspace changes after alter", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_alter WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
@@ -109,8 +102,7 @@ describe("Metadata#getKeyspace()", function () {
                         );
                         next();
                     },
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "ALTER KEYSPACE test_alter WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 2}",
                     ),
@@ -132,8 +124,7 @@ describe("Metadata#getKeyspace()", function () {
         it("should return null after dropping keyspace", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_drop WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
@@ -143,8 +134,7 @@ describe("Metadata#getKeyspace()", function () {
                         assert.isNotNull(ks);
                         next();
                     },
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "DROP KEYSPACE test_drop",
                     ),
@@ -162,8 +152,7 @@ describe("Metadata#getKeyspace()", function () {
         it("should return empty tables/views/udts maps for a keyspace with none", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_empty_ks WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
@@ -186,15 +175,13 @@ describe("Metadata#getKeyspace()", function () {
         it("should report durableWrites correctly", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_durable_writes_off WITH replication = " +
                             "{'class': 'NetworkTopologyStrategy', 'dc1': 1} " +
                             "AND durable_writes = false",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_durable_writes_on WITH replication = " +
                             "{'class': 'NetworkTopologyStrategy', 'dc1': 1} " +
@@ -219,18 +206,15 @@ describe("Metadata#getKeyspace()", function () {
         it("should expose tables keyed by table name", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_tbls WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1};",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_tbls.tbl_1 (id uuid PRIMARY KEY, name varchar)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_tbls.tbl_2 (id uuid PRIMARY KEY, idx int)",
                     ),
@@ -262,18 +246,15 @@ describe("Metadata#getKeyspace()", function () {
         it("should return the same table instance whether getTable() is called before or after tables", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_tbls_order WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1};",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_tbls_order.tbl_1 (id uuid PRIMARY KEY, name varchar)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_tbls_order.tbl_2 (id uuid PRIMARY KEY, idx int)",
                     ),
@@ -311,18 +292,15 @@ describe("Metadata#getKeyspace()", function () {
         it("should expose udts keyed by type name", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_udts WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TYPE test_ks_udts.udt_a (x int)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TYPE test_ks_udts.udt_b (y text)",
                     ),
@@ -354,18 +332,15 @@ describe("Metadata#getKeyspace()", function () {
         it("should return the same UDT instance whether getUdt() is called before or after udts", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_udts_order WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TYPE test_ks_udts_order.udt_a (x int)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TYPE test_ks_udts_order.udt_b (y text)",
                     ),
@@ -401,26 +376,22 @@ describe("Metadata#getKeyspace()", function () {
         it("should expose views keyed by view name", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_views WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_views.base_tbl (id uuid PRIMARY KEY, name varchar, nr int)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE MATERIALIZED VIEW test_ks_views.by_name AS " +
                             "SELECT * FROM test_ks_views.base_tbl " +
                             "WHERE name IS NOT NULL AND id IS NOT NULL " +
                             "PRIMARY KEY (name, id)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE MATERIALIZED VIEW test_ks_views.by_nr AS " +
                             "SELECT * FROM test_ks_views.base_tbl " +
@@ -464,26 +435,22 @@ describe("Metadata#getKeyspace()", function () {
         it("should return the same view instance whether getMaterializedView() is called before or after views", function (done) {
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_views_order WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_views_order.base_tbl (id uuid PRIMARY KEY, name varchar, nr int)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE MATERIALIZED VIEW test_ks_views_order.by_name AS " +
                             "SELECT * FROM test_ks_views_order.base_tbl " +
                             "WHERE name IS NOT NULL AND id IS NOT NULL " +
                             "PRIMARY KEY (name, id)",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE MATERIALIZED VIEW test_ks_views_order.by_nr AS " +
                             "SELECT * FROM test_ks_views_order.base_tbl " +
@@ -526,13 +493,11 @@ describe("Metadata#getKeyspace()", function () {
             // wrapper around it - and likewise for the tables/columns reached through it.
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_identity WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_identity.identity_tbl (id uuid PRIMARY KEY)",
                     ),
@@ -569,8 +534,7 @@ describe("Metadata#getKeyspace()", function () {
             // records, so reading it twice does not construct two objects.
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_strategy_id WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                     ),
@@ -598,13 +562,11 @@ describe("Metadata#getKeyspace()", function () {
             let ks1, ks2, table1, table2;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE KEYSPACE test_ks_tbls_cache WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1} AND durable_writes = true",
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "CREATE TABLE test_ks_tbls_cache.tbl_1 (id uuid PRIMARY KEY, name varchar)",
                     ),
@@ -622,8 +584,7 @@ describe("Metadata#getKeyspace()", function () {
                         assert.strictEqual(ks1.tables["tbl_1"], table1);
                         next();
                     },
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         "ALTER KEYSPACE test_ks_tbls_cache WITH durable_writes = false",
                     ),
@@ -660,13 +621,11 @@ describe("Metadata#getKeyspaces()", function () {
     it("should return a record that includes every created keyspace", function (done) {
         utils.series(
             [
-                helper.toTask(
-                    setupInfo.client.execute,
+                helper.toDdlTask(
                     setupInfo.client,
                     "CREATE KEYSPACE test_ksall_1 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                 ),
-                helper.toTask(
-                    setupInfo.client.execute,
+                helper.toDdlTask(
                     setupInfo.client,
                     "CREATE KEYSPACE test_ksall_2 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 2}",
                 ),
@@ -707,13 +666,11 @@ describe("Metadata#getKeyspaces()", function () {
         // KeyspaceMetadata objects, whichever of the two is called first.
         utils.series(
             [
-                helper.toTask(
-                    setupInfo.client.execute,
+                helper.toDdlTask(
                     setupInfo.client,
                     "CREATE KEYSPACE test_ksall_identity WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                 ),
-                helper.toTask(
-                    setupInfo.client.execute,
+                helper.toDdlTask(
                     setupInfo.client,
                     "CREATE TABLE test_ksall_identity.identity_tbl (id uuid PRIMARY KEY)",
                 ),
@@ -766,8 +723,7 @@ describe("Metadata#getKeyspaces()", function () {
                     });
                     next();
                 },
-                helper.toTask(
-                    setupInfo.client.execute,
+                helper.toDdlTask(
                     setupInfo.client,
                     "CREATE KEYSPACE test_ksall_order WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                 ),
@@ -789,8 +745,7 @@ describe("Metadata#getKeyspaces()", function () {
     it("should reflect keyspace changes after alter", function (done) {
         utils.series(
             [
-                helper.toTask(
-                    setupInfo.client.execute,
+                helper.toDdlTask(
                     setupInfo.client,
                     "CREATE KEYSPACE test_ksall_alter WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 1}",
                 ),
@@ -802,8 +757,7 @@ describe("Metadata#getKeyspaces()", function () {
                     assert.strictEqual(ks.strategy.datacenterRepfactors.dc1, 1);
                     next();
                 },
-                helper.toTask(
-                    setupInfo.client.execute,
+                helper.toDdlTask(
                     setupInfo.client,
                     "ALTER KEYSPACE test_ksall_alter WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1': 2}",
                 ),

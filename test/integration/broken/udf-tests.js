@@ -28,7 +28,9 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
         ];
         utils.eachSeries(
             queries,
-            client.execute.bind(client),
+            function (query, next) {
+                helper.ddl(client, query).then(() => next(), next);
+            },
             helper.finish(client, done),
         );
     });
@@ -298,8 +300,7 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
                 [
                     client.connect.bind(client),
                     nonSyncClient.connect.bind(nonSyncClient),
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         "CREATE FUNCTION stringify(i int) RETURNS NULL ON NULL INPUT RETURNS text LANGUAGE java AS 'return Integer.toString(i);'",
                     ),
@@ -329,8 +330,7 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
                             next,
                         );
                     },
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         "CREATE OR REPLACE FUNCTION stringify(i int) RETURNS NULL ON NULL INPUT RETURNS text LANGUAGE java AS 'return Integer.toString(i) + \"hello\";'",
                     ),
@@ -620,8 +620,7 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
                 [
                     client.connect.bind(client),
                     nonSyncClient.connect.bind(nonSyncClient),
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         "CREATE AGGREGATE ks_udf.sum2(int) SFUNC plus STYPE int INITCOND 0",
                     ),
@@ -648,8 +647,7 @@ vdescribe("2.2", "Metadata @SERVER_API", function () {
                             next,
                         );
                     },
-                    helper.toTask(
-                        client.execute,
+                    helper.toDdlTask(
                         client,
                         "CREATE OR REPLACE AGGREGATE ks_udf.sum2(int) SFUNC plus STYPE int INITCOND 200",
                     ),

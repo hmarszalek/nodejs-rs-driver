@@ -88,28 +88,43 @@ context("with a reusable 3 node cluster", function () {
     let client = helper.setup("3:0", {}).client;
 
     before(function (done) {
-        utils.eachSeries(
+        utils.series(
             [
                 // In the tests, we have some hardcoded assumptions, which nodes will be contacted (by usage of token aware policy).
                 // Those nodes are determined based on how Vnodes work - meaning that when testing on scylla, we need to disable tablets,
                 // which otherwise break the assumptions about which nodes to expect as part of the request coordinator.
-                helper.keyspaceDefinitionWithTabletsDisabled(
+                helper.toDdlTask(
                     client,
-                    "CREATE KEYSPACE ks_network_rp1 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : 1}",
+                    helper.keyspaceDefinitionWithTabletsDisabled(
+                        client,
+                        "CREATE KEYSPACE ks_network_rp1 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : 1}",
+                    ),
                 ),
-                helper.keyspaceDefinitionWithTabletsDisabled(
+                helper.toDdlTask(
                     client,
-                    "CREATE KEYSPACE ks_network_rp2 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : 2}",
+                    helper.keyspaceDefinitionWithTabletsDisabled(
+                        client,
+                        "CREATE KEYSPACE ks_network_rp2 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : 2}",
+                    ),
                 ),
-                "CREATE TABLE ks_network_rp1.table_b (id int primary key, name int)",
-                "CREATE TABLE ks_network_rp2.table_c (id int primary key, name int)",
-                "CREATE TABLE ks_network_rp2.table_composite (id1 text, id2 text, primary key ((id1, id2)))",
+                helper.toDdlTask(
+                    client,
+                    "CREATE TABLE ks_network_rp1.table_b (id int primary key, name int)",
+                ),
+                helper.toDdlTask(
+                    client,
+                    "CREATE TABLE ks_network_rp2.table_c (id int primary key, name int)",
+                ),
+                helper.toDdlTask(
+                    client,
+                    "CREATE TABLE ks_network_rp2.table_composite (id1 text, id2 text, primary key ((id1, id2)))",
+                ),
                 // Try to prevent consistency issues in the query trace
-                "ALTER KEYSPACE system_traces WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1'}",
+                helper.toDdlTask(
+                    client,
+                    "ALTER KEYSPACE system_traces WITH replication = {'class': 'NetworkTopologyStrategy', 'replication_factor': '1'}",
+                ),
             ],
-            function (q, next) {
-                client.execute(q, next);
-            },
             done,
         );
     });
