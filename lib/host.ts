@@ -65,6 +65,11 @@ class Host extends events.EventEmitter {
     hostId: Uuid;
 
     /**
+     * Live handle to this node in the Rust driver's cluster state.
+     */
+    #node: rust.NodeHandle;
+
+    /**
      * Creates a new Host instance.
      *
      * Instances of this class are constructed directly from the native code when reading cluster metadata.
@@ -76,8 +81,10 @@ class Host extends events.EventEmitter {
         datacenter: string | null,
         rack: string | null,
         hostId: Buffer,
+        node: rust.NodeHandle,
     ) {
         super();
+        this.#node = node;
         this.address = address;
         this.cassandraVersion = null;
         this.datacenter = datacenter;
@@ -85,14 +92,14 @@ class Host extends events.EventEmitter {
         this.tokens = [];
         this.hostId = Uuid.fromRust(hostId);
     }
-
     /**
-     * This endpoint is not yet implemented, and its usage will throw an error
+     * Determines if the node is UP now and the driver has working connections to it.
      *
-     * Determines if the node is UP now (seen as UP by the driver).
+     * In particular, if there's a network partition and the node is seen as UP by other nodes
+     * but driver has no connections to it, then this will return `false`.
      */
     isUp(): boolean {
-        throw new Error(`TODO: Not implemented`);
+        return this.#node.isConnected();
     }
 
     /**

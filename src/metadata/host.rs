@@ -43,6 +43,25 @@ pub(crate) fn cache_host_map(
     NapiRef::new(env, host_map)
 }
 
+/// A live handle to a node of the Rust driver's cluster state.
+///
+/// Everything else a `Host` exposes is a snapshot: the address, datacenter, rack and host id are
+/// copied out of the `Node` when the `Host` is built. Liveness cannot be snapshotted the same
+/// way. Holding the `Arc<Node>` lets the value be read afresh on every call.
+#[napi]
+pub struct NodeHandle {
+    inner: Arc<Node>,
+}
+
+#[napi]
+impl NodeHandle {
+    /// Whether the driver currently holds at least one working connection to this node.
+    #[napi]
+    pub fn is_connected(&self) -> bool {
+        self.inner.is_connected()
+    }
+}
+
 /// Builds the arguments passed to the JS Host constructor for the given node.
 fn host_ctor_args<'a>(node: &'a Arc<Node>, env: &'a Env) -> napi::Result<HostCtorArgs<'a>> {
     let address = SocketAddr::new(node.address.ip(), node.address.port());
@@ -53,6 +72,9 @@ fn host_ctor_args<'a>(node: &'a Arc<Node>, env: &'a Env) -> napi::Result<HostCto
         node.datacenter.as_deref(),
         node.rack.as_deref(),
         CopyableBuffer::new(node.host_id.as_bytes().as_slice()),
+        NodeHandle {
+            inner: Arc::clone(node),
+        },
     )))
 }
 
