@@ -25,8 +25,7 @@ describe("Metadata#getUdt()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TYPE ${keyspace}.address_udt (street varchar, zip_code int)`,
                     ),
@@ -66,8 +65,7 @@ describe("Metadata#getUdt()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TYPE ${keyspace}.identity_udt (x int)`,
                     ),
@@ -95,8 +93,7 @@ describe("Metadata#getUdt()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TYPE ${keyspace}.drop_udt (id int)`,
                     ),
@@ -108,8 +105,7 @@ describe("Metadata#getUdt()", function () {
                         assert.isNotNull(udt);
                         next();
                     },
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `DROP TYPE ${keyspace}.drop_udt`,
                     ),

@@ -337,11 +337,10 @@ describe("Client", function () {
             const expectedValues = {};
             utils.series(
                 [
-                    function createTable(next) {
-                        const query =
-                            "CREATE TABLE tbl_map_floats (id text PRIMARY KEY, data map<text, float>)";
-                        client.execute(query, next);
-                    },
+                    helper.toDdlTask(
+                        client,
+                        "CREATE TABLE tbl_map_floats (id text PRIMARY KEY, data map<text, float>)",
+                    ),
                     function insertData(next) {
                         const query =
                             "INSERT INTO tbl_map_floats (id, data) VALUES (?, ?)";
@@ -933,15 +932,14 @@ describe("Client", function () {
             beforeEach((done) => {
                 table =
                     setupInfo.keyspace + "." + helper.getRandomName("table");
-                const queries = [
-                    util.format(
-                        "CREATE TABLE %s (k int, a int, c int, primary key (k, a))",
-                        table,
-                    ),
-                ];
+                const createTableCql = util.format(
+                    "CREATE TABLE %s (k int, a int, c int, primary key (k, a))",
+                    table,
+                );
 
+                const insertQueries = [];
                 for (let i = 0; i < 10; i++) {
-                    queries.push(
+                    insertQueries.push(
                         util.format(
                             "INSERT INTO %s (k, a, c) values (%d,%d,%d)",
                             table,
@@ -951,7 +949,19 @@ describe("Client", function () {
                         ),
                     );
                 }
-                utils.eachSeries(queries, client.execute.bind(client), done);
+                utils.series(
+                    [
+                        helper.toDdlTask(client, createTableCql),
+                        function insertRows(next) {
+                            utils.eachSeries(
+                                insertQueries,
+                                client.execute.bind(client),
+                                next,
+                            );
+                        },
+                    ],
+                    done,
+                );
             });
             it("should be resilient to schema change made between paging", (done) => {
                 const query = util.format("select * from %s", table);
@@ -981,15 +991,22 @@ describe("Client", function () {
                         assert.ok(result);
                         if (result.nextPage) {
                             // make schema change.
-                            client.execute(
-                                util.format("alter table %s add b int", table),
-                                (sErr, sResult) => {
-                                    assert.ifError(sErr);
-                                    schemaChangeMade = true;
-                                    // retrieve next page after schema change is made.
-                                    result.nextPage();
-                                },
-                            );
+                            helper
+                                .ddl(
+                                    client,
+                                    util.format(
+                                        "alter table %s add b int",
+                                        table,
+                                    ),
+                                )
+                                .then(
+                                    () => {
+                                        schemaChangeMade = true;
+                                        // retrieve next page after schema change is made.
+                                        result.nextPage();
+                                    },
+                                    (sErr) => assert.ifError(sErr),
+                                );
                         } else {
                             done();
                         }

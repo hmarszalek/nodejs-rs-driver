@@ -87,25 +87,23 @@ describe("TokenAwarePolicy", function () {
                 [
                     helper.ccmHelper.start("3:3"),
                     localClient.connect.bind(localClient),
-                    function createKs(next) {
-                        const createQuery =
-                            "CREATE KEYSPACE %s WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : %d, 'dc2' : %d}";
-                        localClient.execute(
-                            util.format(createQuery, keyspace, 1, 1),
-                            helper.waitSchema(localClient, next),
-                        );
-                    },
-                    function createTable(next) {
-                        const query = util.format(
+                    helper.toDdlTask(
+                        localClient,
+                        util.format(
+                            "CREATE KEYSPACE %s WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : %d, 'dc2' : %d}",
+                            keyspace,
+                            1,
+                            1,
+                        ),
+                    ),
+                    helper.toDdlTask(
+                        localClient,
+                        util.format(
                             "CREATE TABLE %s.%s (id int primary key, name int)",
                             keyspace,
                             table,
-                        );
-                        localClient.execute(
-                            query,
-                            helper.waitSchema(localClient, next),
-                        );
-                    },
+                        ),
+                    ),
                     localClient.shutdown.bind(localClient),
                 ],
                 done,

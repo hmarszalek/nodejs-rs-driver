@@ -75,23 +75,19 @@ describe("metadata @SERVER_API", function () {
                             );
                             next();
                         },
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE KEYSPACE ks1 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 3}",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE KEYSPACE ks2 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 2}",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE KEYSPACE ks3 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1}",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE KEYSPACE ks4 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : 1}",
                         ),
@@ -126,8 +122,7 @@ describe("metadata @SERVER_API", function () {
                             );
                             next();
                         },
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "ALTER KEYSPACE ks3 WITH replication = {'class' : 'NetworkTopologyStrategy', 'dc1' : 1}",
                         ),
@@ -156,8 +151,7 @@ describe("metadata @SERVER_API", function () {
                     assert.ok(!m.keyspaces["ks_todelete"]);
                     utils.series(
                         [
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 helper.createKeyspaceCql("ks_todelete", 1),
                             ),
@@ -165,8 +159,7 @@ describe("metadata @SERVER_API", function () {
                                 assert.ok(m.keyspaces["ks_todelete"]);
                                 next();
                             },
-                            helper.toTask(
-                                client.execute,
+                            helper.toDdlTask(
                                 client,
                                 "DROP KEYSPACE ks_todelete",
                             ),
@@ -204,18 +197,15 @@ describe("metadata @SERVER_API", function () {
                 utils.series(
                     [
                         client.connect.bind(client),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE KEYSPACE ksrf1 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1}",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE KEYSPACE ksrf2 WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 2}",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE KEYSPACE ksntsrf2 WITH replication = {'class': 'NetworkTopologyStrategy', 'dc1' : 2}",
                         ),
@@ -324,14 +314,13 @@ describe("metadata @SERVER_API", function () {
                 utils.series(
                     [
                         helper.toTask(client.connect, client),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             helper.createKeyspaceCql("ks_udt1", 2),
                         ),
                         helper.toTask(client.execute, client, "USE ks_udt1"),
-                        helper.toTask(client.execute, client, createUdtQuery1),
-                        helper.toTask(client.execute, client, createUdtQuery2),
+                        helper.toDdlTask(client, createUdtQuery1),
+                        helper.toDdlTask(client, createUdtQuery2),
                         function checkPhoneUdt(next) {
                             const m = client.metadata;
                             m.getUdt(
@@ -1672,8 +1661,7 @@ describe("metadata @SERVER_API", function () {
                 utils.series(
                     [
                         client.connect.bind(client),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TABLE ks_tbl_meta.tbl_changing (id uuid PRIMARY KEY, text_sample text)",
                         ),
@@ -1689,8 +1677,7 @@ describe("metadata @SERVER_API", function () {
                                 },
                             );
                         },
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "ALTER TABLE ks_tbl_meta.tbl_changing ADD new_col1 timeuuid",
                         ),
@@ -1881,8 +1868,7 @@ describe("metadata @SERVER_API", function () {
                 utils.series(
                     [
                         client.connect.bind(client),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE MATERIALIZED VIEW monthlyhigh AS " +
                                 "SELECT game, year, month, score, user, day FROM scores WHERE game IS NOT NULL AND year IS NOT NULL AND" +
@@ -1922,8 +1908,7 @@ describe("metadata @SERVER_API", function () {
                                 },
                             );
                         },
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "ALTER MATERIALIZED VIEW monthlyhigh" +
                                 " WITH compaction = { 'class' : 'LeveledCompactionStrategy' }",
@@ -1951,8 +1936,7 @@ describe("metadata @SERVER_API", function () {
                                 },
                             );
                         },
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "DROP MATERIALIZED VIEW monthlyhigh",
                         ),
@@ -1980,21 +1964,18 @@ describe("metadata @SERVER_API", function () {
                 utils.series(
                     [
                         client.connect.bind(client),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TABLE users (user TEXT PRIMARY KEY, first_name TEXT)",
                         ),
                         // create a view using 'select *'.
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE MATERIALIZED VIEW users_by_first_all AS SELECT * FROM users" +
                                 " WHERE user IS NOT NULL AND first_name IS NOT NULL PRIMARY KEY (first_name, user)",
                         ),
                         // create same view using 'select <columns>'.
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE MATERIALIZED VIEW users_by_first AS" +
                                 " SELECT user, first_name FROM users WHERE user IS NOT NULL AND first_name IS NOT NULL" +
@@ -2055,8 +2036,7 @@ describe("metadata @SERVER_API", function () {
                                 },
                             );
                         },
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "ALTER TABLE users ADD last_name text",
                         ),
@@ -2220,8 +2200,9 @@ describe("metadata @SERVER_API", function () {
                     ));
 
             it("should return true when executing DDL queries", () =>
-                client
-                    .execute(
+                helper
+                    .ddl(
+                        client,
                         "CREATE KEYSPACE ks_rs_is_schema_in_agreement" +
                             " WITH replication = {'class': 'SimpleStrategy', 'replication_factor' : 1}",
                     )

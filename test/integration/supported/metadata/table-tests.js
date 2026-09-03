@@ -34,8 +34,7 @@ describe("Metadata#getTable()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TABLE ${keyspace}.test_table (id uuid PRIMARY KEY, name varchar)`,
                     ),
@@ -78,8 +77,7 @@ describe("Metadata#getTable()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TABLE ${keyspace}.identity_tbl (id uuid PRIMARY KEY)`,
                     ),
@@ -110,8 +108,7 @@ describe("Metadata#getTable()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TABLE ${keyspace}.test_drop (id uuid PRIMARY KEY)`,
                     ),
@@ -123,8 +120,7 @@ describe("Metadata#getTable()", function () {
                         assert.isNotNull(table);
                         next();
                     },
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `DROP TABLE ${keyspace}.test_drop`,
                     ),

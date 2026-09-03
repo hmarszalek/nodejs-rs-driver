@@ -29,7 +29,8 @@ module.exports = function (keyspace, prepare) {
 
         before(() => client.connect());
         before(() =>
-            client.execute(
+            helper.ddl(
+                client,
                 "CREATE TABLE tbl_paging (id1 text, id2 int, value text, PRIMARY KEY (id1, id2))",
             ),
         );

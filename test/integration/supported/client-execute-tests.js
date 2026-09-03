@@ -537,13 +537,15 @@ describe("Client @SERVER_API", function () {
 
         vit("2.1", "should encode CONTAINS parameter", function (done) {
             const client = setupInfo.client;
-            client.execute(
-                util.format(
-                    "CREATE INDEX list_sample_index ON %s(list_sample)",
-                    table,
-                ),
-                function (err) {
-                    assert.ifError(err);
+            helper
+                .ddl(
+                    client,
+                    util.format(
+                        "CREATE INDEX list_sample_index ON %s(list_sample)",
+                        table,
+                    ),
+                )
+                .then(() => {
                     // Allow 1 second for index to build (otherwise an IndexNotAvailableException may be raised while index is building).
                     setTimeout(function () {
                         const query = util.format(
@@ -558,8 +560,8 @@ describe("Client @SERVER_API", function () {
                             done();
                         });
                     }, 1000);
-                },
-            );
+                })
+                .catch(done);
         });
         it("should accept localOne and localQuorum consistencies", function (done) {
             const client = setupInfo.client;
@@ -1182,23 +1184,19 @@ describe("Client @SERVER_API", function () {
                 utils.series(
                     [
                         client.connect.bind(client),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TYPE phone (alias text, number text, country_code int, other boolean)",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             'CREATE TYPE address (street text, "ZIP" int, phones set<frozen<phone>>)',
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TABLE tbl_udts (id uuid PRIMARY KEY, phone_col frozen<phone>, address_col frozen<address>)",
                         ),
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TABLE tbl_tuples (id uuid PRIMARY KEY, tuple_col tuple<text,int,blob>)",
                         ),
@@ -1675,8 +1673,7 @@ describe("Client @SERVER_API", function () {
                 const client = setupInfo.client;
                 utils.series(
                     [
-                        helper.toTask(
-                            client.execute,
+                        helper.toDdlTask(
                             client,
                             "CREATE TABLE tbl_smallints (id uuid PRIMARY KEY, smallint_sample smallint, tinyint_sample tinyint, text_sample text)",
                         ),
@@ -1767,7 +1764,7 @@ describe("Client @SERVER_API", function () {
                 const query =
                     "CREATE TABLE tbl_datetimes " +
                     "(id uuid PRIMARY KEY, date_sample date, time_sample time, text_sample text)";
-                setupInfo.client.execute(query, done);
+                helper.ddl(setupInfo.client, query).then(() => done(), done);
             });
             vit(
                 "2.2",
@@ -1864,7 +1861,7 @@ describe("Client @SERVER_API", function () {
                     "  tup frozen<tuple<int, int>>," +
                     "  d date," +
                     "  t time)";
-                client.execute(query, done);
+                helper.ddl(client, query).then(() => done(), done);
             });
             vit(
                 "2.2",

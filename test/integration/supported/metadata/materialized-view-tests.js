@@ -26,13 +26,11 @@ describe("Metadata#getMaterializedView()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TABLE ${keyspace}.mv_base_table (id uuid PRIMARY KEY, name varchar)`,
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE MATERIALIZED VIEW ${keyspace}.mv_by_name AS ` +
                             `SELECT * FROM ${keyspace}.mv_base_table ` +
@@ -74,13 +72,11 @@ describe("Metadata#getMaterializedView()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TABLE ${keyspace}.identity_tbl (id uuid PRIMARY KEY, name varchar, nr int)`,
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE MATERIALIZED VIEW ${keyspace}.by_name AS ` +
                             `SELECT * FROM ${keyspace}.identity_tbl ` +
@@ -116,13 +112,11 @@ describe("Metadata#getMaterializedView()", function () {
             const keyspace = setupInfo.keyspace;
             utils.series(
                 [
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE TABLE ${keyspace}.mv_drop_base (id uuid PRIMARY KEY, name varchar)`,
                     ),
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `CREATE MATERIALIZED VIEW ${keyspace}.mv_drop_view AS ` +
                             `SELECT * FROM ${keyspace}.mv_drop_base ` +
@@ -138,8 +132,7 @@ describe("Metadata#getMaterializedView()", function () {
                         assert.isNotNull(view);
                         next();
                     },
-                    helper.toTask(
-                        setupInfo.client.execute,
+                    helper.toDdlTask(
                         setupInfo.client,
                         `DROP MATERIALIZED VIEW ${keyspace}.mv_drop_view`,
                     ),
