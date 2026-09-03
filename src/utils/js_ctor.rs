@@ -5,6 +5,7 @@ use napi::bindgen_prelude::{
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use crate::metadata::host::NodeHandle;
 use crate::types::type_helpers::SocketAddrWrapper;
 use crate::types::type_wrappers::ComplexType;
 use crate::utils::js_instance::JsInstance;
@@ -47,6 +48,7 @@ pub(crate) type HostCtorArgs<'a> = FnArgs<(
     Option<&'a str>,
     Option<&'a str>,
     CopyableBuffer<'a>,
+    NodeHandle,
 )>;
 
 /// Arguments passed to `HostMap(items)`.

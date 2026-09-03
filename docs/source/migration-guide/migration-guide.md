@@ -200,6 +200,11 @@ when using `client.hosts.keys()` - see issue [#282](https://github.com/scylladb/
 (they were checked in the driver tests). Those assumptions no longer hold true,
 the hosts returned from `client.hosts.keys()` may be in a random order, that may vary from run to run.
 
+### UP/DOWN distinction
+
+Previously, the Host was set as UP or DOWN as a result of received events. Now, whether a Host is considered
+as UP depends on whether it has an established open connection with the driver.
+
 #### `Host.address` is now a `net.SocketAddress`
 
 In the `cassandra-driver`, `host.address` was a plain string in the `ip:port` format.
@@ -230,6 +235,7 @@ raw `Buffer`.
   open-source Cassandra and ScyllaDB clusters, which have no DSE version to report.
 - `workloads` (getter/setter): also DSE-specific (e.g. the Search/Analytics/Graph workloads DSE
   assigns to nodes); not applicable outside DSE.
+- `canBeConsideredAsUp()`: determines if the host can be considered as UP – use `Host.isUp()` instead.
 
 `HostMap`:
 
