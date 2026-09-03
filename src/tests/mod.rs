@@ -1,4 +1,3 @@
-#[cfg(feature = "client-routes-proxy-tests")]
 pub mod client_routes_proxy_tests;
 pub mod client_routes_tests;
 pub mod js_results_tests;

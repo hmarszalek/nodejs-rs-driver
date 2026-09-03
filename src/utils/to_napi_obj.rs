@@ -65,6 +65,9 @@ use crate::utils::js_instance::JsInstance;
 /// {kind: 1} // Case 1
 /// {kind: 2, someData: false} // Case 2
 /// ```
+/// At the moment there is no use case for this macro, except for the test suite,
+/// but it could be useful in the future.
+#[cfg(feature = "tests")]
 macro_rules! define_rust_to_js_convertible_object {
     (pub struct $struct_name: ident{
         $($field_name:ident, $js_name:ident: $field_type:ty),*,
@@ -212,6 +215,9 @@ where
     }
 }
 
+// At the moment there is no use case for this macro, except for the test suite,
+// but it could be useful in the future.
+#[cfg(feature = "tests")]
 pub(crate) use define_rust_to_js_convertible_object;
 
 /// A borrowed byte slice that, when converted to a napi value, is always copied

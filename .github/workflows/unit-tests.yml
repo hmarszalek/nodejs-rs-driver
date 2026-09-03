@@ -39,7 +39,7 @@ jobs:
           host: ${{ matrix.settings.host }}
           target: ${{ matrix.settings.target }}
       - name: Build
-        run: npm run build -- --target ${{ matrix.settings.target }}
+        run: npm run build:test -- --target ${{ matrix.settings.target }}
         shell: bash
       - name: Run unit tests
         run: npm run unit

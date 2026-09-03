@@ -3,7 +3,7 @@
 //! These wrap `scylla-proxy`'s `nlb` module - the same fake network load balancer
 //! the upstream rust driver's own client-routes integration tests rely on.
 //!
-//! Only compiled when built with the `client-routes-proxy-tests` feature.
+//! Only compiled when built with the `tests` feature.
 
 use std::net::SocketAddr;
 use std::sync::OnceLock;

@@ -2,7 +2,7 @@
 
 // Integration test for the `clientRoutes` client option.
 //
-// This is only runnable against a native addon built with the `client-routes-proxy-tests`
+// This is only runnable against a native addon built with the `tests`
 // Cargo feature enabled (which we enable for all tests with the `build:test` script).
 //
 // Everything about route refreshing (reacting to CLIENT_ROUTES_CHANGE, topology changes,
@@ -16,12 +16,6 @@ const helper = require("../../test-helper.js");
 const Client = require("../../../lib/client.js");
 const rust = require("../../../index");
 
-// The fake NLBs this test routes through live behind the `client-routes-proxy-tests` Cargo
-// feature. Skip the whole suite if the feature is not available rather than failing.
-const builtForTesting =
-    typeof rust.testsStartClientRoutesNlbs === "function" &&
-    typeof rust.testsStopClientRoutesNlbs === "function";
-
 const NODE_COUNT = 3;
 const CONNECTION_ID = "nodejs-driver-client-routes-test";
 const REST_API_PORT = 10000;
@@ -31,7 +25,7 @@ const WHOAMI_QUERY = "SELECT host_id FROM system.local WHERE key='local'";
 // Used to make a route unusable on purpose.
 const UNRESOLVABLE_HOSTNAME = "unreachable.invalid";
 
-(builtForTesting ? describe : describe.skip)("Client routes", function () {
+describe("Client routes", function () {
     // Generous, but bounded: posting routes retries the REST API for up to ~20s while a
     // freshly started node warms up, and each test then connects and queries every node.
     this.timeout(60000);
