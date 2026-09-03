@@ -53,7 +53,9 @@ jobs:
           name: bindings-${{ matrix.settings.target }}
           path: ${{ matrix.settings.files }}
           if-no-files-found: error
-  test-x86_64-unknown-linux-gnu:
+  # Integration tests on x86_64 run in integration-tests.yml and extended-ci.yml.
+  # This release-specific job verifies the built package by running the examples.
+  test-x86_64-unknown-linux-gnu-examples:
     needs:
       - build
     name: test built package - x86_64-unknown-linux-gnu
@@ -71,19 +73,25 @@ jobs:
         run: npm i
       - name: Build TypeScript
         run: npm run build:ts
-      - name: Install ccm
-        # We need a copy of the repo for the ssl tests.
-        # When installing ccm as a package, we do not save the certificates,
-        # that are present in the ./ssl directory
+      - name: Setup 3-node Scylla cluster
         run: |
-          git clone https://github.com/scylladb/scylla-ccm.git
-          pip install --user --upgrade psutil
-          pip install --user https://github.com/scylladb/scylla-ccm/archive/master.zip
-      - name: Run integration tests
-        env:
-          CCM_IS_SCYLLA: "true"
-          CCM_PATH: "./scylla-ccm"
-        run: npm run integration
+          sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
+          docker compose -f .github/docker-compose.yml up -d --wait
+      - name: Install examples dependencies
+        run: |
+          cd examples
+          npm i
+      - name: Run all examples
+        run: SCYLLA_URI=172.42.0.2:9042 npm run examples
+      - name: Stop the cluster
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml stop
+      - name: Print the cluster logs
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml logs
+      - name: Remove cluster
+        if: ${{ always() }}
+        run: docker compose -f .github/docker-compose.yml down
   # Integration tests on aarch64 run in integration-tests.yml and extended-ci.yml.
   # This release-specific job verifies the built package by running the examples.
   test-aarch64-unknown-linux-gnu-examples:
@@ -125,7 +133,7 @@ jobs:
         run: docker compose -f .github/docker-compose.yml down
   publish:
     needs:
-      - test-x86_64-unknown-linux-gnu
+      - test-x86_64-unknown-linux-gnu-examples
       - test-aarch64-unknown-linux-gnu-examples
     name: Publish
     runs-on: ubuntu-latest
