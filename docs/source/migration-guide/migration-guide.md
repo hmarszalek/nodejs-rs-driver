@@ -64,6 +64,13 @@ The following options' default values have changed:
 With the update of encoding options, we encourage usage of the builtin types.
 The ability to use the driver with types is kept as a legacy option, and may be removed in the future.
 
+The following option is new, with no `cassandra-driver` equivalent:
+
+- `protocolOptions.autoAwaitSchemaAgreement`: determines whether the driver automatically waits
+  for schema agreement after a DDL statement before resolving the query, retrying for up to
+  `protocolOptions.maxSchemaAgreementWaitSeconds`. See the [Schema Agreement](#schema-agreement)
+  section for more information. Defaults to `true`.
+
 ## Client internal members
 
 In the `cassandra-driver`, several `Client` members were accessible at runtime
@@ -397,6 +404,28 @@ const trace = await client.metadata.getTrace(traceId, types.consistencies.all);
 
 It is accepted for compatibility only and is not plumbed through to the request, so the trace is
 read at the driver's own consistency level regardless of what you pass.
+
+### Schema agreement
+
+#### `checkSchemaAgreement()` computes a different answer
+
+With one node stopped, right after a schema change, the `cassandra-driver` reported `false`
+(the stopped node's stale row disagrees). Now the driver reports `true` (the stopped node is
+simply not asked, and the reachable nodes agree).
+
+#### `waitForSchemaAgreement()` is new
+
+`client.metadata.waitForSchemaAgreement()`, unlike `checkSchemaAgreement()`, actively retries and
+rejects, rather than resolving `false`, when agreement is not reached.
+
+#### `ResultSet.info.isSchemaInAgreement` is removed
+
+The `cassandra-driver` reports whether the automatic wait after a DDL statement converged, as
+`isSchemaInAgreement` on `result.info`. This driver has no equivalent field: when
+`protocolOptions.autoAwaitSchemaAgreement` (described in [client options](#client-options)) is enabled, the driver
+rejects the query outright if agreement is not reached in time, so a successful `ResultSet` with
+`isSchemaInAgreement: false` can never exist to read; and when it is disabled, nothing in the
+result identifies whether the cluster has converged. Use `waitForSchemaAgreement()` after the query instead.
 
 ## Logging
 
