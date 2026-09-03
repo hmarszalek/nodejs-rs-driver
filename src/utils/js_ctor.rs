@@ -32,6 +32,7 @@ pub mod js_constructible_class {
 }
 
 /// Arguments passed to the test-only `TestJsClass(name, value)` constructor.
+#[cfg(feature = "tests")]
 type TestJsClassCtorArgs<'a> = FnArgs<(&'a str, i32)>;
 
 /// Arguments passed to `net.SocketAddress({ address, port, family })`.
@@ -237,6 +238,7 @@ macro_rules! define_js_ctor {
     };
 }
 
+#[cfg(feature = "tests")]
 define_js_ctor!(
     /// `TestJsClass(name, value)` - test-only class used by `crate::tests::napi_ref_tests`.
     static_name: TEST_JS_CLASS_CTOR,

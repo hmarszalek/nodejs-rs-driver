@@ -12,6 +12,7 @@ pub mod paging;
 pub mod requests;
 pub mod result;
 pub mod session;
+#[cfg(feature = "tests")]
 pub mod tests;
 pub mod tracing_info;
 pub mod types;
