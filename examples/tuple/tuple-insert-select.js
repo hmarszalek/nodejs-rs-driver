@@ -50,4 +50,5 @@ async function example() {
 
 example().catch(function (err) {
     console.error("There was an error", err);
+    process.exitCode = 1;
 });

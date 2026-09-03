@@ -58,9 +58,7 @@ async function executeOneAtATime(info) {
     }
 }
 
-example();
-
-// Exit on unhandledRejection
-process.on("unhandledRejection", (reason) => {
-    throw reason;
+example().catch(function (err) {
+    console.error("There was an error", err);
+    process.exitCode = 1;
 });
