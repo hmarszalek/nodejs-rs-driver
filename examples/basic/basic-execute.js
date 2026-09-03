@@ -14,11 +14,7 @@ async function example() {
     console.log("Obtained row: ", row);
 }
 
-example().catch((err) => {
+example().catch(function (err) {
     console.error("There was an error", err);
-});
-
-// Exit on unhandledRejection
-process.on("unhandledRejection", (reason) => {
-    throw reason;
+    process.exitCode = 1;
 });
