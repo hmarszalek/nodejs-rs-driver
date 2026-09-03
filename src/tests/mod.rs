@@ -1,5 +1,6 @@
 pub mod client_routes_proxy_tests;
 pub mod client_routes_tests;
+pub mod ddl_test_helpers;
 pub mod js_results_tests;
 pub mod logging_tests;
 pub mod napi_ref_tests;
