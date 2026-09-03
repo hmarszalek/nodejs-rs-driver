@@ -5,7 +5,7 @@
  * @module metadata
  */
 
-import { token, ValueCallback } from "../..";
+import { EmptyCallback, token, ValueCallback } from "../..";
 // TODO: remove once `lib/promise-utils.js` is converted to typescript.
 // @ts-ignore
 import promiseUtils = require("../promise-utils");
@@ -40,17 +40,6 @@ export type {
 } from "./strategy";
 export { StrategyKind } from "./strategy";
 export { ClientState };
-
-/**
- * @const
- * @private
- */
-const _selectSchemaVersionPeers = "SELECT schema_version FROM system.peers";
-/**
- * @const
- * @private
- */
-const _selectSchemaVersionLocal = "SELECT schema_version FROM system.local";
 
 /**
  * Represents cluster and schema information.
@@ -302,12 +291,37 @@ class Metadata {
      *
      * This method performs a one-time check only, without any form of retry; therefore
      * `protocolOptions.maxSchemaAgreementWaitSeconds` setting does not apply in this case.
-     * @returns {boolean} `true` when all hosts agree on the schema and `false` when there is no
-     * agreement or when the check could not be performed (for example, if the control connection
-     * is down).
+     * @param {Function} [callback] Executes callback(err, agreement) when execution completed.
+     * When not defined, the method will return a promise.
+     * @returns {Promise<boolean> | void} `true` when all hosts agree on the schema and `false`
+     * when there is no agreement or when the check could not be performed (for example, if a
+     * host's connection is down).
      */
-    checkSchemaAgreement(): boolean {
-        throw new Error("TODO: Not implemented");
+    checkSchemaAgreement(
+        callback?: ValueCallback<boolean>,
+    ): Promise<boolean> | void {
+        return promiseUtils.optionalCallback(
+            this.#rustClient.checkSchemaAgreement(),
+            callback,
+        );
+    }
+
+    /**
+     * Waits until all currently reachable hosts agree on the schema definition.
+     *
+     * This method actively checks whether schema agreement was established, for up to
+     * `protocolOptions.maxSchemaAgreementWaitSeconds` – rejecting if agreement is not reached
+     * within that time, or if the check could not be performed at all (for example, if no host
+     * is reachable).
+     * @param {Function} [callback] Executes callback(err) when execution completed. When not
+     * defined, the method will return a promise.
+     * @returns {Promise<void> | void}
+     */
+    waitForSchemaAgreement(callback?: EmptyCallback): Promise<void> | void {
+        return promiseUtils.optionalCallback(
+            this.#rustClient.waitForSchemaAgreement(),
+            callback,
+        );
     }
 }
 

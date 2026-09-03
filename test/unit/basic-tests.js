@@ -464,6 +464,40 @@ describe("clientOptions", function () {
                 });
             }, TypeError);
         });
+        it("should validate protocolOptions.maxSchemaAgreementWaitSeconds", function () {
+            assert.doesNotThrow(function () {
+                clientOptions.extend({
+                    contactPoints: ["host1"],
+                    protocolOptions: { maxSchemaAgreementWaitSeconds: 0 },
+                });
+            });
+            assert.throws(function () {
+                clientOptions.extend({
+                    contactPoints: ["host1"],
+                    protocolOptions: { maxSchemaAgreementWaitSeconds: "1" },
+                });
+            }, TypeError);
+            assert.throws(function () {
+                clientOptions.extend({
+                    contactPoints: ["host1"],
+                    protocolOptions: { maxSchemaAgreementWaitSeconds: -1 },
+                });
+            }, TypeError);
+            assert.throws(function () {
+                clientOptions.extend({
+                    contactPoints: ["host1"],
+                    protocolOptions: { maxSchemaAgreementWaitSeconds: 0.5 },
+                });
+            }, TypeError);
+            assert.throws(function () {
+                clientOptions.extend({
+                    contactPoints: ["host1"],
+                    protocolOptions: {
+                        maxSchemaAgreementWaitSeconds: 0x100000000,
+                    },
+                });
+            }, TypeError);
+        });
         it("should validate credentials", () => {
             const message =
                 /credentials username and password must be a string/;

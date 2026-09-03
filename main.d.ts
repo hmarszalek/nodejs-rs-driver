@@ -252,6 +252,7 @@ export interface ClientOptions {
   profiles?: ExecutionProfile[];
   protocolOptions?: {
     maxSchemaAgreementWaitSeconds?: number;
+    autoAwaitSchemaAgreement?: boolean;
     maxVersion?: number;
     port?: number;
   };

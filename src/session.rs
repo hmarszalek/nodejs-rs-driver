@@ -144,6 +144,39 @@ impl SessionWrapper {
             .map(ToOwned::to_owned)
     }
 
+    /// Checks whether all nodes that are currently up agree on the schema version.
+    ///
+    /// This is a one-time check, without any form of retry.
+    ///
+    /// Failing to perform the check is not reported as an error: the Rust driver's failure is
+    /// logged as a warning (and thus reaches the client's log emitter through the logging
+    /// bridge) and reported as "no agreement".
+    #[napi(ts_return_type = "Promise<boolean>")]
+    pub async fn check_schema_agreement(&self) -> bool {
+        match self.inner.get_session().check_schema_agreement().await {
+            Ok(agreed_version) => agreed_version.is_some(),
+            Err(err) => {
+                tracing::warn!("There was an error while checking the schema agreement: {err}");
+                false
+            }
+        }
+    }
+
+    /// Waits until all currently reachable nodes agree on the schema version.
+    ///
+    /// Unlike `check_schema_agreement`, which performs a single, non-retrying check and never
+    /// fails, this retries at the driver's `schema_agreement_interval` until agreement is
+    /// reached or `schema_agreement_timeout` elapses, rejecting if agreement could not be
+    /// reached in time - or could not be checked at all, for example if no node is reachable.
+    #[napi(ts_return_type = "Promise<void>")]
+    pub async fn wait_for_schema_agreement(&self) -> JsResult<()> {
+        with_custom_error_async(async || {
+            self.inner.get_session().await_schema_agreement().await?;
+            ConvertedResult::Ok(())
+        })
+        .await
+    }
+
     /// Executes unprepared statement. This assumes the types will be either guessed or provided by user.
     ///
     /// Returns a wrapper of the result provided by the rust driver

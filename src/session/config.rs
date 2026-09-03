@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::fmt::Debug;
 use std::sync::Arc;
+use std::time::Duration;
 
 use napi::bindgen_prelude::BigInt;
 use openssl::pkcs12::Pkcs12;
@@ -113,6 +114,8 @@ pub struct SessionOptions {
     credentials_username, credentialsUsername: String,
     credentials_password, credentialsPassword: String,
     cache_size, cacheSize: u32,
+    schema_agreement_timeout_secs, schemaAgreementTimeoutSecs: u32,
+    auto_await_schema_agreement, autoAwaitSchemaAgreement: bool,
     ssl_options, sslOptions: SslOptions,
     load_balancing_config, loadBalancingConfig: LoadBalancingConfig,
     retry_policy, retryPolicy: RetryPolicyKind,
@@ -337,6 +340,14 @@ fn apply_common_options<K: SessionBuilderKindSupportsKnownNodes>(
                 "There is a check in JS Client constructor that should have prevented only one credential passed"
             )
         }
+    }
+
+    if let Some(schema_agreement_timeout_secs) = options.schema_agreement_timeout_secs {
+        builder = builder
+            .schema_agreement_timeout(Duration::from_secs(schema_agreement_timeout_secs as u64));
+    }
+    if let Some(auto_await_schema_agreement) = options.auto_await_schema_agreement {
+        builder = builder.auto_await_schema_agreement(auto_await_schema_agreement);
     }
 
     if let Some(allow_list) = options

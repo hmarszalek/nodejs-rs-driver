@@ -57,6 +57,10 @@ const options = {
         retry: new RetryPolicy(),
         addressResolution: new MappingAddressTranslator(resolutionMap),
     },
+    protocolOptions: {
+        maxSchemaAgreementWaitSeconds: 5,
+        autoAwaitSchemaAgreement: false,
+    },
 };
 
 // Since some of the options can be represented as multiple types,
