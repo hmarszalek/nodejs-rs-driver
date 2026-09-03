@@ -2,7 +2,7 @@
 
 // Integration test for the `clientRoutes` client option.
 //
-// This is only runnable against a native addon built with the `client-routes-proxy-tests`
+// This is only runnable against a native addon built with the `tests`
 // Cargo feature enabled (which we enable for all tests with the `build:test` script).
 //
 // Everything about route refreshing (reacting to CLIENT_ROUTES_CHANGE, topology changes,
@@ -16,7 +16,7 @@ const helper = require("../../test-helper.js");
 const Client = require("../../../lib/client.js");
 const rust = require("../../../index");
 
-// The fake NLBs this test routes through live behind the `client-routes-proxy-tests` Cargo
+// The fake NLBs this test routes through live behind the `tests` Cargo
 // feature. Skip the whole suite if the feature is not available rather than failing.
 const builtForTesting =
     typeof rust.testsStartClientRoutesNlbs === "function" &&
