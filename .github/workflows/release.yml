@@ -73,14 +73,14 @@ jobs:
         run: npm run build:ts
       - name: Install ccm
         # We need a copy of the repo for the ssl tests.
-        # When installing ccm as a package, we do not save the certificates, 
+        # When installing ccm as a package, we do not save the certificates,
         # that are present in the ./ssl directory
         run: |
           git clone https://github.com/scylladb/scylla-ccm.git
           pip install --user --upgrade psutil
           pip install --user https://github.com/scylladb/scylla-ccm/archive/master.zip
       - name: Run integration tests
-        env: 
+        env:
           CCM_IS_SCYLLA: "true"
           CCM_PATH: "./scylla-ccm"
         run: npm run integration
@@ -163,29 +163,29 @@ jobs:
       # Not necessary for the release, but useful for debugging in case some binaries are missing
       - name: List packages
         run: ls -R ./npm
-      # Platform specific binaries will be released only in the sub-packages. 
+      # Platform specific binaries will be released only in the sub-packages.
       # We do not want them in the main package, where the napi-rs has placed them.
-      - name: Clean up binaries 
+      - name: Clean up binaries
         run: rm *.node
       - name: Dry-run publish
-        # In the next step we publish multiple packages in a single command: 
+        # In the next step we publish multiple packages in a single command:
         # all platform-specific native addon packages and the main driver
         # package. If any package fails mid-publish, we end up with a partial release.
-        # 
+        #
         # Why do we need separate dry runs, but only a single real publish commands?
-        # 
+        #
         # Napi-rs manages releasing sub-packages through prepublish configured command.
         # However prepublish --dry-run flag only skips side-effects
         # without actually validating against the npm registry. To get real
         # validation, we call npm publish --dry-run explicitly on every sub-package.
-        # 
+        #
         # --ignore-scripts is used prevent the prepublishOnly hook (napi prepublish)
         # from running, since that would publish the sub-packages.
         run: |
           (cd npm/linux-x64-gnu && npm publish --dry-run --access public)
           (cd npm/linux-arm64-gnu && npm publish --dry-run --access public)
           npm publish --dry-run --access public --ignore-scripts
-        env: 
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish
         if: github.event_name == 'release' || inputs.publish
