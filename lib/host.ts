@@ -105,16 +105,6 @@ class Host extends events.EventEmitter {
     /**
      * This endpoint is not yet implemented, and its usage will throw an error
      *
-     * Determines if the host can be considered as UP.
-     * Deprecated: Use {@link Host#isUp()} instead.
-     */
-    canBeConsideredAsUp(): boolean {
-        throw new Error(`TODO: Not implemented`);
-    }
-
-    /**
-     * This endpoint is not yet implemented, and its usage will throw an error
-     *
      * Returns an array containing the Cassandra Version as an Array of Numbers having the major version in the first
      * position.
      */
