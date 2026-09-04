@@ -1,4 +1,4 @@
-import { Client, Host, metadata, types } from "../../main";
+import { Client, Host, Replica, metadata, types } from "../../main";
 import TableMetadata = metadata.TableMetadata;
 import QueryTrace = metadata.QueryTrace;
 import KeyspaceMetadata = metadata.KeyspaceMetadata;
@@ -16,10 +16,11 @@ async function myTest(): Promise<any> {
     let promise: Promise<void>;
     let n: number;
     let hosts: Host[];
+    let replicas: Replica[];
 
     promise = client.connect();
 
-    hosts = client.metadata.getReplicas("ks1", Buffer.from([0]));
+    replicas = client.metadata.getReplicas("ks1", Buffer.from([0]));
 
     const table: TableMetadata | null = client.metadata.getTable(
         "ks1",

@@ -10,7 +10,7 @@ import { EmptyCallback, ValueCallback } from "../..";
 // @ts-ignore
 import promiseUtils = require("../promise-utils");
 import { Token, TokenRange, minTokenRange } from "../token";
-import { Host } from "../host";
+import { Host, Replica } from "../host";
 import types = require("../types");
 import { ColumnInfo } from "../types/cql-utils";
 
@@ -76,19 +76,18 @@ class Metadata {
     }
 
     /**
-     * Gets the host list representing the replicas that contain the given partition key, token or token range.
+     * Gets the replicas that contain the given partition key, token or token range.
      *
-     * It uses the pre-loaded keyspace metadata to retrieve the replicas for a token for a given keyspace.
-     * When the keyspace metadata has not been loaded, it returns null.
+     * A replica is the shard of a node the partition lives on, paired with that node.
      * @param {string} keyspaceName Name of the keyspace.
      * @param {Buffer | Token | TokenRange} token Can be Buffer (serialized partition key),
      * Token or TokenRange.
-     * @returns {Host[]} The replicas.
+     * @returns {Replica[]} The replicas.
      */
     getReplicas(
         keyspaceName: string,
         token: Buffer | Token | TokenRange,
-    ): Host[] {
+    ): Replica[] {
         throw new Error("TODO: Not implemented");
     }
 
