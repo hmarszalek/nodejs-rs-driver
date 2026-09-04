@@ -79,15 +79,29 @@ class Metadata {
      * Gets the replicas that contain the given token or token range.
      *
      * A replica is the shard of a node the partition lives on, paired with that node.
+     * The hosts returned are the very same objects the {@link Client#hosts} map holds,
+     * so a replica's node can be compared against a host of the cluster by identity.
      * @param {string} keyspaceName Name of the keyspace.
+     * @param {string} tableName Name of the table the token belongs to or empty string if
+     * the table is irrelevant.
      * @param {Token | TokenRange} token Token or TokenRange.
      * @returns {Replica[]} The replicas.
      */
     getReplicas(
         keyspaceName: string,
+        tableName: string,
         token: Token | TokenRange,
     ): Replica[] {
-        throw new Error("TODO: Not implemented");
+        if (token instanceof TokenRange) {
+            // A range is replicated as a whole, so any token it contains identifies its replicas.
+            // The end token is the one it always contains, being its inclusive end.
+            token = token.end;
+        }
+        return this.#rustClient.getReplicas(
+            keyspaceName,
+            tableName,
+            token.getValue(),
+        );
     }
 
     /**
