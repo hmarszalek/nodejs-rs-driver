@@ -22,7 +22,7 @@ async function myTest(): Promise<any> {
     promise = client.connect();
 
     token = client.metadata.newToken(Buffer.from([0]), "ks1", "table1");
-    replicas = client.metadata.getReplicas("ks1", token);
+    replicas = client.metadata.getReplicas("ks1", "table1", token);
     hosts = replicas.map((replica) => replica.host);
     n = replicas[0].shard;
 
