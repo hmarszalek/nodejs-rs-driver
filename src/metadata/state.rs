@@ -1,5 +1,5 @@
 use crate::errors::{ConvertedError, ConvertedResult, JsResult, with_custom_error_sync};
-use crate::metadata::host::cache_host_map;
+use crate::metadata::host::cache_hosts;
 use crate::session::SessionWrapper;
 use crate::types::type_wrappers::ComplexType;
 use crate::utils::cache::{NapiRefCache, ReferenceCache, SingleNapiRefCache};
@@ -43,13 +43,16 @@ pub enum UdtRecord {}
 /// snapshot backing a given `ClusterSnapshot` is stale, by comparing Arc pointers.
 pub(crate) struct ClusterSnapshot {
     pub(crate) inner: Arc<scylla::cluster::ClusterState>,
-    /// All nodes known by the Rust driver at the time this snapshot was created, as a JS `HostMap`
-    /// of `Host` objects keyed by address.
+    /// All nodes known by the Rust driver at the time this snapshot was created, as JS `Host`
+    /// objects keyed by the hex-encoded bytes of their host id. Filled in full when the snapshot
+    /// is created.
+    #[expect(unused)]
+    hosts: NapiRefCache<js_constructible_class::Host>,
+    /// The same nodes, collected into the single JS `HostMap` handed to JS as `client.hosts`.
     ///
-    /// The `NapiRef` releases the JS object it pins automatically when dropped (i.e. when this
+    /// The `NapiRef`s release the JS objects they pin automatically when dropped (i.e. when this
     /// `ClusterSnapshot` itself is dropped, or replaced by a fresher one), so no custom finalizer
-    /// is needed here to avoid leaking a `HostMap` on every cluster state refresh. Pinning the map
-    /// keeps every `Host` it holds alive, so the hosts need no separate `NapiRef`s.
+    /// is needed here to avoid leaking a `HostMap` and its hosts on every cluster state refresh.
     pub(crate) host_map: NapiRef<js_constructible_class::HostMap>,
     /// Cache of keyspaces of this snapshot, populated lazily.
     keyspace_cache: ReferenceCache<KeyspaceWrapper>,
@@ -58,10 +61,15 @@ pub(crate) struct ClusterSnapshot {
 }
 
 impl ClusterSnapshot {
-    pub(crate) fn new(inner: Arc<scylla::cluster::ClusterState>, env: &Env) -> napi::Result<Self> {
-        let host_map = cache_host_map(&inner, env)?;
+    pub(crate) fn new(
+        inner: Arc<scylla::cluster::ClusterState>,
+        env: &Env,
+    ) -> ConvertedResult<Self> {
+        let hosts = NapiRefCache::new();
+        let host_map = cache_hosts(&inner, env, &hosts)?;
         Ok(ClusterSnapshot {
             inner,
+            hosts,
             host_map,
             keyspace_cache: ReferenceCache::new(),
             keyspaces_record: SingleNapiRefCache::new(),
