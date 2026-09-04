@@ -3,13 +3,15 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use napi::Env;
-use napi::bindgen_prelude::FnArgs;
+use napi::bindgen_prelude::{BigInt, FnArgs};
 use scylla::cluster::{ClusterState, Node};
+use scylla::routing::Token;
 
 use crate::errors::{ConvertedError, ConvertedResult, JsResult, with_custom_error_sync};
-use crate::metadata::state::ClusterSnapshot;
+use crate::metadata::state::{ClusterSnapshot, ReplicaValue};
 use crate::session::SessionWrapper;
 use crate::types::type_helpers::SocketAddrWrapper;
+use crate::utils::bigint_to_i64;
 use crate::utils::cache::NapiRefCache;
 use crate::utils::js_ctor::{
     HostCtorArgs, build_host, build_host_map, build_socket_address, js_constructible_class,
@@ -99,6 +101,27 @@ impl SessionWrapper {
                     .host_map
                     .get(env)
                     .map_err(ConvertedError::from)
+            })
+        })
+    }
+
+    /// Returns the replicas of the given token of the given table: each the shard of a node the
+    /// partition lives on, paired with that node. Throws if the keyspace or the table is not found.
+    ///
+    /// The hosts are the very same JS objects `get_all_hosts` hands out, so a replica's node can
+    /// be compared against a host of the cluster by identity.
+    #[napi(ts_return_type = "import('../lib/host').Replica[]")]
+    pub fn get_replicas<'env>(
+        &self,
+        env: &'env Env,
+        keyspace: String,
+        table: String,
+        token: BigInt,
+    ) -> JsResult<Vec<JsInstance<'env, ReplicaValue>>> {
+        with_custom_error_sync(|| {
+            self.with_cluster_snapshot(env, |snapshot| {
+                let token = Token::new(bigint_to_i64(token, "Token value must fit in i64")?);
+                snapshot.replicas(env, &keyspace, &table, token)
             })
         })
     }
