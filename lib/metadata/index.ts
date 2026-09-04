@@ -79,15 +79,29 @@ class Metadata {
      * Gets the replicas that contain the given token or token range.
      *
      * A replica is the shard of a node the partition lives on, paired with that node.
+     * The hosts returned are the very same objects the {@link Client#hosts} map holds,
+     * so a replica's node can be compared against a host of the cluster by identity.
      * @param {string} keyspaceName Name of the keyspace.
-     * @param {Token | TokenRange} token Token or TokenRange.
+     * @param {string} tableName Name of the table the token belongs to. For tablets,
+     * this field is absolutely necessary. For vnodes, the table is irrelevant, so an
+     * empty string can be passed.
+     * @param {Token | TokenRange} token Token or TokenRange. If a range is passed, the
+     * replicas are calculated for its end token.
      * @returns {Replica[]} The replicas.
      */
     getReplicas(
         keyspaceName: string,
+        tableName: string,
         token: Token | TokenRange,
     ): Replica[] {
-        throw new Error("TODO: Not implemented");
+        if (token instanceof TokenRange) {
+            token = token.end;
+        }
+        return this.#rustClient.getReplicas(
+            keyspaceName,
+            tableName,
+            token.getValue(),
+        );
     }
 
     /**
