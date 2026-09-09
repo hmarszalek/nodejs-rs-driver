@@ -202,6 +202,8 @@ This policy was deprecated in the `cassandra-driver`, and for this reason was re
 
 ### Hosts
 
+See the [Topology Metadata](../metadata/topology.md) page for the full description of the new API.
+
 #### Hosts order
 
 The `cassandra-driver` driver had some undocumented assumptions about the order of hosts,
