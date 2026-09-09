@@ -48,6 +48,7 @@ Those examples are present in this directory and have the `.broken` in the name 
 - Metadata
   - [Get hosts information](metadata/metadata-hosts.js)
   - [Get schema information: keyspaces, tables, UDTs and materialized views](metadata/metadata-schema.js)
+  - [Full table scan with token ranges](metadata/metadata-token.js)
 - Data types
   - [Working with user-defined types (UDT)](udt/udt-insert-select.js)
   - [Working with tuples](tuple/tuple-insert-select.js)

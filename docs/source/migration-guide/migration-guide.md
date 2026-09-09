@@ -253,6 +253,49 @@ raw `Buffer`.
 
 If your code called any of these, remove the call, as there is no plan to support them in the future.
 
+### Tokens
+
+#### `newToken()` now requires a keyspace and table
+
+`newToken(components, keyspaceName, tableName)` computes the token of a partition key, given the
+already-serialized values of its columns. The partitioner is read from the table's own metadata.
+
+`components` is a single `Buffer` for a single-column partition key, or an array of `Buffer`s, in
+the order the table declares its partition key columns, for a composite one:
+
+```javascript
+// CREATE TABLE my_keyspace.my_table (
+//   user_id text,
+//   name text,
+//   created_at timestamp,
+//   PRIMARY KEY ((user_id, name), created_at)
+// )
+//
+// The partition key is (user_id, name), so the components must be provided in that order:
+// the encoded user_id, then the encoded name.
+const uderId = Buffer.from("123", "utf8");
+const name = Buffer.from("alice", "utf8");
+
+const token = client.metadata.newToken(
+  [userId, name],
+  "my_keyspace",
+  "my_table",
+);
+```
+
+The string form (parsing a token's own decimal representation) is gone too, so construct a
+`Token` directly from a `bigint` instead.
+
+```javascript
+// cassandra-driver
+const token = client.metadata.newToken(Buffer.from("key"));
+const token = client.metadata.newToken("12345"); // parse a token's own string form
+
+// ScyllaDB Node.js RS Driver
+const token = client.metadata.newToken(Buffer.from("key"), "ks", "tbl");
+const token = new (require("@scylladb/driver").token.Token)(12345n); // wrap a raw value directly
+```
+
 ### Schema
 
 The schema metadata API was rewritten from scratch, and almost nothing carries over unchanged.
