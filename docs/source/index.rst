@@ -17,7 +17,8 @@ Support for some optional driver features is planned for upcoming releases.
    getting-started/getting-started
    statements/index
    paging/paging
-   metadata/metadata
+   metadata/schema
+   metadata/topology
    tracing/tracing
    logging/logging
    policies/index
@@ -38,7 +39,8 @@ Contents
   - :doc:`Batch Statements <statements/batch>`
 
 - :doc:`Fetching Large Result Sets <paging/paging>` - Paging through large result sets
-- :doc:`Schema Metadata <metadata/metadata>` - Inspecting keyspaces, tables, views and user-defined types
+- :doc:`Schema Metadata <metadata/schema>` - Inspecting keyspaces, tables, views and user-defined types
+- :doc:`Cluster Topology <metadata/topology>` - Nodes, addresses, and datacenter awareness
 - :doc:`Query Tracing <tracing/tracing>` - Diagnosing query execution with server-side traces
 - :doc:`Policies <policies/index>` - Load balancing and retry policies
 - :doc:`Authentication <connecting/authentication>` - Connecting with credentials or SSL

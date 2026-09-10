@@ -202,6 +202,8 @@ This policy was deprecated in the `cassandra-driver`, and for this reason was re
 
 ### Hosts
 
+See the [Topology Metadata](../metadata/topology.md) page for the full description of the new API.
+
 #### Hosts order
 
 The `cassandra-driver` driver had some undocumented assumptions about the order of hosts,
@@ -299,7 +301,7 @@ const token = new (require("@scylladb/driver").token.Token)(12345n); // wrap a r
 ### Schema
 
 The schema metadata API was rewritten from scratch, and almost nothing carries over unchanged.
-See the [Schema Metadata](../metadata/metadata.md) page for the full description of the new API;
+See the [Schema Metadata](../metadata/schema.md) page for the full description of the new API;
 this section lists what changes for you as a caller.
 
 #### Everything is synchronous now
