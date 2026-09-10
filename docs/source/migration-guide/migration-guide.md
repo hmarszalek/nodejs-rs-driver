@@ -72,6 +72,13 @@ The following option is new, with no `cassandra-driver` equivalent:
   for schema agreement after a DDL statement before resolving the query, retrying for up to
   `protocolOptions.maxSchemaAgreementWaitSeconds`. See the [Schema Agreement](#schema-agreement)
   section for more information. Defaults to `true`.
+- `protocolOptions.metadataRequestServersideTimeoutSecs`: a ScyllaDB-only server-side timeout applied
+  to schema and topology metadata queries, decoupling them from whatever timeout applies to ordinary
+  requests. Has no effect against a non-ScyllaDB cluster. Defaults to `30`.
+- `protocolOptions.metadataRequestClientsideTimeoutSecs`: a client-side timeout applied to each page
+  fetch of a metadata query, guarding against a node that stops responding without closing the
+  connection. Defaults to `protocolOptions.metadataRequestServersideTimeoutSecs` + 1, or `30` if that
+  is not set either.
 
 ## Client internal members
 
