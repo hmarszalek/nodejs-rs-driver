@@ -116,6 +116,7 @@ pub struct SessionOptions {
     cache_size, cacheSize: u32,
     schema_agreement_timeout_secs, schemaAgreementTimeoutSecs: u32,
     auto_await_schema_agreement, autoAwaitSchemaAgreement: bool,
+    metadata_request_serverside_timeout_secs, metadataRequestServersideTimeoutSecs: u32,
     ssl_options, sslOptions: SslOptions,
     load_balancing_config, loadBalancingConfig: LoadBalancingConfig,
     retry_policy, retryPolicy: RetryPolicyKind,
@@ -348,6 +349,10 @@ fn apply_common_options<K: SessionBuilderKindSupportsKnownNodes>(
     }
     if let Some(auto_await_schema_agreement) = options.auto_await_schema_agreement {
         builder = builder.auto_await_schema_agreement(auto_await_schema_agreement);
+    }
+
+    if let Some(secs) = options.metadata_request_serverside_timeout_secs {
+        builder = builder.metadata_request_serverside_timeout(Duration::from_secs(secs as u64));
     }
 
     if let Some(allow_list) = options
