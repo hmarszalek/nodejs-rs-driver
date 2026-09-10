@@ -76,17 +76,16 @@ class Metadata {
     }
 
     /**
-     * Gets the replicas that contain the given partition key, token or token range.
+     * Gets the replicas that contain the given token or token range.
      *
      * A replica is the shard of a node the partition lives on, paired with that node.
      * @param {string} keyspaceName Name of the keyspace.
-     * @param {Buffer | Token | TokenRange} token Can be Buffer (serialized partition key),
-     * Token or TokenRange.
+     * @param {Token | TokenRange} token Token or TokenRange.
      * @returns {Replica[]} The replicas.
      */
     getReplicas(
         keyspaceName: string,
-        token: Buffer | Token | TokenRange,
+        token: Token | TokenRange,
     ): Replica[] {
         throw new Error("TODO: Not implemented");
     }
