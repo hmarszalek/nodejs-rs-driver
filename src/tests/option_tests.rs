@@ -28,6 +28,7 @@ pub fn tests_check_client_option(options: SessionOptions, test_case: i32) {
                     schema_agreement_timeout_secs: Some(5),
                     auto_await_schema_agreement: Some(false),
                     metadata_request_serverside_timeout_secs: Some(7),
+                    metadata_request_clientside_timeout_secs: Some(9),
                     ssl_options: Some(SslOptions {
                         reject_unauthorized: Some(false),
                         ca: Some(vec!["CA cert 1".to_owned(), "CA cert 2".to_owned()]),
@@ -84,6 +85,7 @@ pub fn tests_check_client_option(options: SessionOptions, test_case: i32) {
                     schema_agreement_timeout_secs: None,
                     auto_await_schema_agreement: None,
                     metadata_request_serverside_timeout_secs: None,
+                    metadata_request_clientside_timeout_secs: None,
                     ssl_options: None,
                     load_balancing_config: None,
                     retry_policy: None,
@@ -107,6 +109,7 @@ pub fn tests_check_client_option(options: SessionOptions, test_case: i32) {
                     schema_agreement_timeout_secs: None,
                     auto_await_schema_agreement: None,
                     metadata_request_serverside_timeout_secs: None,
+                    metadata_request_clientside_timeout_secs: None,
                     ssl_options: None,
                     load_balancing_config: None,
                     retry_policy: None,

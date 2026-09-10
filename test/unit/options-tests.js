@@ -62,6 +62,7 @@ const options = {
         maxSchemaAgreementWaitSeconds: 5,
         autoAwaitSchemaAgreement: false,
         metadataRequestServersideTimeoutSecs: 7,
+        metadataRequestClientsideTimeoutSecs: 9,
     },
 };
 
