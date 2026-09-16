@@ -153,7 +153,11 @@ export class Client extends events.EventEmitter {
 
   shutdown(callback: EmptyCallback): void;
 
-  getReplicas(keyspace: string, token: Buffer): Host[];
+  getReplicas(
+    keyspace: string,
+    table: string,
+    token: Token | TokenRange,
+  ): Replica[];
 
   getState(): metadata.ClientState;
 }
