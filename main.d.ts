@@ -254,6 +254,8 @@ export interface ClientOptions {
   protocolOptions?: {
     maxSchemaAgreementWaitSeconds?: number;
     autoAwaitSchemaAgreement?: boolean;
+    metadataRequestServersideTimeoutSecs?: number;
+    metadataRequestClientsideTimeoutSecs?: number;
     maxVersion?: number;
     port?: number;
   };
