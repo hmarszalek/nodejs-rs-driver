@@ -2,6 +2,7 @@
 
 const { assert } = require("chai");
 const util = require("util");
+const fs = require("fs");
 const path = require("path");
 const policies = require("../lib/policies");
 const types = require("../lib/types");
@@ -87,6 +88,38 @@ class SetPolyFill {
     toString() {
         return this.arr.toString();
     }
+}
+
+const scyllaVersionEnvPath = path.join(__dirname, "..", "scylla_version.env");
+let defaultScyllaVersion = null;
+
+/**
+ * Gets the default ScyllaDB version from `scylla_version.env` in the repository
+ * root – the single source of truth shared with the docker compose cluster,
+ * which Renovate keeps up to date.
+ * @returns {String} A full, three-component version.
+ */
+function getDefaultScyllaVersion() {
+    if (defaultScyllaVersion === null) {
+        const version = fs
+            .readFileSync(scyllaVersionEnvPath, "utf8")
+            .split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line.startsWith("SCYLLA_VERSION="))
+            .map((line) => line.slice("SCYLLA_VERSION=".length).trim())
+            .find((value) => value.length > 0);
+
+        if (!/^\d+\.\d+\.\d+$/.test(version)) {
+            throw new Error(
+                `SCYLLA_VERSION in ${scyllaVersionEnvPath} must be a full, three-component ` +
+                    `version (e.g. 2026.3.0), got ${version === undefined ? "no value" : `"${version}"`}.`,
+            );
+        }
+
+        defaultScyllaVersion = version;
+    }
+
+    return defaultScyllaVersion;
 }
 
 const ccm = {
@@ -1023,7 +1056,7 @@ const helper = {
             isScylla: isScylla,
             version:
                 process.env["CCM_VERSION"] ||
-                (isScylla ? "release:2026.2.2" : "3.11.4"),
+                (isScylla ? `release:${getDefaultScyllaVersion()}` : "3.11.4"),
         };
     },
 
