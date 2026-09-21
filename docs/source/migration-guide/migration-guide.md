@@ -107,6 +107,54 @@ and results are **not cached** between `client.batch()` calls.
 
 Avoid using unprepared batches unless all statements take no bind markers.
 
+## Subclassing driver base classes
+
+Some base classes that were constructor functions in the `cassandra-driver` are now
+ES2015 classes:
+
+- `auth.AuthProvider`
+- `auth.Authenticator`
+
+An ES2015 class cannot be called without `new`, so the constructor-function inheritance
+pattern no longer works. Extending one of these with `Base.call(this)` throws
+`TypeError: Class constructor Base cannot be invoked without 'new'` as soon as your
+subclass is instantiated:
+
+```js
+const AuthProvider = require("@scylladb/driver").auth.AuthProvider;
+
+// Old version: throws TypeError when `new MyAuthProvider()` is called
+function MyAuthProvider() {
+    AuthProvider.call(this);
+}
+MyAuthProvider.prototype = Object.create(AuthProvider.prototype);
+MyAuthProvider.prototype.newAuthenticator = function (endpoint, name) {
+    return new MyAuthenticator();
+};
+
+// New version
+class MyAuthProvider extends AuthProvider {
+    newAuthenticator(endpoint, name) {
+        return new MyAuthenticator();
+    }
+}
+```
+
+If you cannot convert your subclass to `class` syntax, `Reflect.construct()` can
+instantiate the base class from a constructor function. Keep the prototype chain
+in place: the driver validates the provider with
+`authProvider instanceof AuthProvider`, which fails without it.
+
+```js
+function MyAuthProvider() {
+    return Reflect.construct(AuthProvider, [], MyAuthProvider);
+}
+MyAuthProvider.prototype = Object.create(AuthProvider.prototype);
+MyAuthProvider.prototype.newAuthenticator = function (endpoint, name) {
+    return new MyAuthenticator();
+};
+```
+
 ## Load balancing policies
 
 Unless you have specific requirements about load balancing policies, we recommend using the default
