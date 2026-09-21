@@ -114,6 +114,9 @@ ES2015 classes:
 
 - `auth.AuthProvider`
 - `auth.Authenticator`
+- `policies.reconnection.ReconnectionPolicy`
+- `policies.reconnection.ConstantReconnectionPolicy`
+- `policies.reconnection.ExponentialReconnectionPolicy`
 
 An ES2015 class cannot be called without `new`, so the constructor-function inheritance
 pattern no longer works. Extending one of these with `Base.call(this)` throws
