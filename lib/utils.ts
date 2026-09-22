@@ -3,8 +3,6 @@
 import errors = require("./errors");
 import promiseUtils = require("./promise-utils");
 import type { PreparedInfo } from "./new-utils";
-// TODO: Remove after lib/execution-options.js is converted to Typescript.
-// @ts-ignore
 import type { ExecutionOptions } from "./execution-options";
 
 /**
