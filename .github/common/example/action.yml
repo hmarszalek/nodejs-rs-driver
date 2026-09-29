@@ -1,10 +1,15 @@
 name: Run examples
-description: "Runs all examples on a single architecture and node version" 
+description: "Runs all examples on a single architecture and node version"
 
 inputs:
   build-command:
     required: true
     type: string
+  server:
+    description: "Server to run the examples against: scylla or cassandra"
+    required: false
+    type: string
+    default: scylla
 
 runs:
   using: "composite"
@@ -12,11 +17,32 @@ runs:
     - name: Build
       run: ${{ inputs.build-command }}
       shell: bash
-    # Scylla docker setup copied from https://github.com/scylladb/scylla-rust-driver/blob/4532bdcf46955af57b902be25e0c419d9d6e3f20/.github/workflows/rust.yml
-    - name: Setup 3-node Scylla cluster
+    - name: Select the cluster to run against
+      # Each server has a cluster definition of its own, on a network and subnet of its
+      # own, so the address the examples connect to depends on which one is started.
       run: |
-        sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
-        docker compose -f .github/docker-compose.yml up -d --wait
+        case "${{ inputs.server }}" in
+          scylla)
+            echo "COMPOSE_FILE=.github/docker-compose.yml" >> "$GITHUB_ENV"
+            echo "SCYLLA_URI=172.42.0.2:9042" >> "$GITHUB_ENV"
+            ;;
+          cassandra)
+            echo "COMPOSE_FILE=.github/docker-compose-cassandra.yml" >> "$GITHUB_ENV"
+            echo "SCYLLA_URI=172.43.0.2:9042" >> "$GITHUB_ENV"
+            ;;
+          *)
+            echo "Unknown server: ${{ inputs.server }}" >&2
+            exit 1
+            ;;
+        esac
+      shell: bash
+    # Scylla docker setup copied from https://github.com/scylladb/scylla-rust-driver/blob/4532bdcf46955af57b902be25e0c419d9d6e3f20/.github/workflows/rust.yml
+    - name: Raise the AIO limit for Scylla
+      if: ${{ inputs.server == 'scylla' }}
+      run: sudo sh -c "echo 2097152 >> /proc/sys/fs/aio-max-nr"
+      shell: bash
+    - name: Setup 3-node ${{ inputs.server }} cluster
+      run: docker compose -f "$COMPOSE_FILE" up -d --wait
       shell: bash
     - name: Install examples dependencies
       run: |
@@ -24,17 +50,19 @@ runs:
         npm i
       shell: bash
     - name: Run all examples
-      run: SCYLLA_URI=172.42.0.2:9042 npm run examples
+      env:
+        SKIP_VECTOR_EXAMPLES: ${{ inputs.server == 'cassandra' }}
+      run: npm run examples
       shell: bash
     - name: Stop the cluster
       if: ${{ always() }}
-      run: docker compose -f .github/docker-compose.yml stop
+      run: docker compose -f "$COMPOSE_FILE" stop
       shell: bash
     - name: Print the cluster logs
       if: ${{ always() }}
-      run: docker compose -f .github/docker-compose.yml logs
+      run: docker compose -f "$COMPOSE_FILE" logs
       shell: bash
     - name: Remove cluster
       if: ${{ always() }}
-      run: docker compose -f .github/docker-compose.yml down
+      run: docker compose -f "$COMPOSE_FILE" down
       shell: bash

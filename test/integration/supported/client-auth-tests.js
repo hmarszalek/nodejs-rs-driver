@@ -10,15 +10,24 @@ describe("Client", function () {
     this.timeout(180000);
 
     describe("#connect() with auth", function () {
+        const yaml = [
+            "authenticator:PasswordAuthenticator",
+            "authorizer:CassandraAuthorizer",
+        ];
+        // Scylla needs its superuser role and password spelled out in the config.
+        // Cassandra creates the default cassandra/cassandra superuser role on its own
+        // (once superuser_setup_delay_ms elapses, set to 0 below) and rejects these two
+        // as unknown properties.
+        if (helper.getServerInfo().isScylla) {
+            yaml.push(
+                "auth_superuser_name:cassandra",
+                "auth_superuser_salted_password:$6$x7IFjiX5VCpvNiFk$2IfjTvSyGL7zerpV.wbY7mJjaRCrJ/68dtT3UpT.sSmNYz1bPjtn3mH.kJKFvaZ2T4SbVeBijjmwGjcb83LlV/",
+            );
+        }
         helper.setup(1, {
             initClient: false,
             ccmOptions: {
-                yaml: [
-                    "authenticator:PasswordAuthenticator",
-                    "authorizer:CassandraAuthorizer",
-                    "auth_superuser_name:cassandra",
-                    "auth_superuser_salted_password:$6$x7IFjiX5VCpvNiFk$2IfjTvSyGL7zerpV.wbY7mJjaRCrJ/68dtT3UpT.sSmNYz1bPjtn3mH.kJKFvaZ2T4SbVeBijjmwGjcb83LlV/",
-                ],
+                yaml,
                 jvmArgs: ["-Dcassandra.superuser_setup_delay_ms=0"],
             },
         });

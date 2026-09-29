@@ -1,17 +1,24 @@
 name: Run integration tests
-description: "Runs integration tests on a single architecture and node version" 
+description: "Runs integration tests on a single architecture and node version"
 
 inputs:
   build-command:
     required: true
+  server:
+    description: "Server to run the tests against: scylla or cassandra"
+    required: false
+    type: string
+    default: scylla
   scylla-arch:
     description: "Architecture of the ScyllaDB package installed by CCM"
-    required: true
+    required: false
+    type: string
 
 runs:
   using: "composite"
   steps:
     - uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+      id: java
       with:
         distribution: 'temurin'
         java-version: '8'
@@ -24,20 +31,61 @@ runs:
         git clone https://github.com/scylladb/scylla-ccm.git
         pip install --user --upgrade psutil
         pip install --user ./scylla-ccm
+    # CCM downloads the release itself, and ~/.ccm/repository is cached, so only the first
+    # run on a given version pays for the download.
+    - name: Restore the CCM repository cache
+      id: ccm-cache
+      if: ${{ inputs.server == 'cassandra' }}
+      uses: actions/cache/restore@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ~/.ccm/repository
+        key: ccm-cassandra-${{ runner.os }}-4.1.12
+    - name: Download Apache Cassandra
+      if: ${{ inputs.server == 'cassandra' && steps.ccm-cache.outputs.cache-hit != 'true' }}
+      # Creating a throwaway cluster is what makes CCM download the release into
+      # ~/.ccm/repository.
+      shell: bash
+      run: |
+        mkdir -p /tmp/download.ccm
+        ccm create download -v 4.1.12 --config-dir=/tmp/download.ccm
+        rm -rf /tmp/download.ccm
+    - name: Save the CCM repository cache
+      if: ${{ inputs.server == 'cassandra' && steps.ccm-cache.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
+      with:
+        path: ~/.ccm/repository
+        key: ccm-cassandra-${{ runner.os }}-4.1.12
+    - name: Configure Apache Cassandra
+      if: ${{ inputs.server == 'cassandra' }}
+      shell: bash
+      run: |
+        version=4.1.12
+        sed -ri \
+          -e 's/^materialized_views_enabled:.*/enable_materialized_views: true/' \
+          -e 's/^commitlog_sync_period:.*/commitlog_sync_period_in_ms: 10000/' \
+          -e 's/^batch_size_warn_threshold:.*/batch_size_warn_threshold_in_kb: 5/' \
+          "$HOME/.ccm/repository/$version/conf/cassandra.yaml"
+        # Picked up by both test steps below. Left unset on Scylla, where the test helper
+        # falls back to its own default.
+        echo "CCM_VERSION=$version" >> "$GITHUB_ENV"
     - name: Build
       run: ${{ inputs.build-command }}
       shell: bash
-    - name: Run integration tests on scylla
+    - name: Run integration tests on ${{ inputs.server }}
       env:
-        CCM_IS_SCYLLA: "true"
+        CCM_IS_SCYLLA: ${{ inputs.server == 'scylla' }}
         CCM_PATH: "./scylla-ccm"
+        # Without this, CCM starts Cassandra with whatever Java 8 it can find under
+        # /usr/lib/jvm, rather than the one installed above.
+        CUSTOM_JAVA_HOME: ${{ steps.java.outputs.path }}
         SCYLLA_ARCH: ${{ inputs.scylla-arch }}
       shell: bash
       run: npm run integration
-    - name: Run integration tests on scylla with expose-gc
+    - name: Run integration tests on ${{ inputs.server }} with expose-gc
       env:
-        CCM_IS_SCYLLA: "true"
+        CCM_IS_SCYLLA: ${{ inputs.server == 'scylla' }}
         CCM_PATH: "./scylla-ccm"
+        CUSTOM_JAVA_HOME: ${{ steps.java.outputs.path }}
         SCYLLA_ARCH: ${{ inputs.scylla-arch }}
       shell: bash
       run: npm run integration-gc

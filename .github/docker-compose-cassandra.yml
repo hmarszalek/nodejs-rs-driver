@@ -1,0 +1,57 @@
+networks:
+  public:
+    name: cassandra_public
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.43.0.0/16
+
+# Every node is configured identically; only its address and the node it waits for differ.
+x-cassandra-node: &cassandra-node
+  image: cassandra:4.1.12
+  environment:
+    # The image's entrypoint derives the listen and broadcast addresses from the
+    # container's own IP, so only the seed has to be spelled out.
+    CASSANDRA_SEEDS: 172.43.0.2
+    # Cassandra otherwise sizes its heap from the host's total memory, which does not
+    # leave room for three nodes on a CI runner.
+    MAX_HEAP_SIZE: 1G
+    HEAP_NEWSIZE: 256M
+  # Cassandra disables materialized views by default, and the metadata example creates one.
+  # The entrypoint only knows how to set a fixed list of cassandra.yaml keys, so patch it.
+  entrypoint:
+    - /bin/bash
+    - -c
+    - |
+      sed -ri 's/^materialized_views_enabled:.*/materialized_views_enabled: true/' /etc/cassandra/cassandra.yaml
+      exec docker-entrypoint.sh cassandra -f
+  healthcheck:
+    test: [ "CMD", "cqlsh", "-e", "select * from system.local" ]
+    interval: 10s
+    timeout: 10s
+    retries: 60
+
+services:
+  cassandra1:
+    <<: *cassandra-node
+    networks:
+      public:
+        ipv4_address: 172.43.0.2
+  cassandra2:
+    <<: *cassandra-node
+    networks:
+      public:
+        ipv4_address: 172.43.0.3
+    # Cassandra bootstraps one node at a time, so the nodes have to come up in sequence.
+    depends_on:
+      cassandra1:
+        condition: service_healthy
+  cassandra3:
+    <<: *cassandra-node
+    networks:
+      public:
+        ipv4_address: 172.43.0.4
+    depends_on:
+      cassandra2:
+        condition: service_healthy

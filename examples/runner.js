@@ -14,6 +14,12 @@ const path = require("path");
 // Name of the files to ignore as examples, no matter of their path.
 const ignoredFiles = ["util.js", "vector-search-ann.js"];
 
+// The CQL vector type exists in ScyllaDB, but not in the Cassandra 4.1,
+// so its examples cannot be run against every server.
+if (process.env.SKIP_VECTOR_EXAMPLES === "true") {
+    ignoredFiles.push("vector-insert-select.js");
+}
+
 // Timeout for each example in ms
 const timeoutValue = 10000;
 
