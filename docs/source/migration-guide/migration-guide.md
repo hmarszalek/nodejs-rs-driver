@@ -176,6 +176,11 @@ legacy to new `DefaultLoadBalancingPolicy`. When `localDc` option is provided,
 the load balancing will be set to allow connection to the provided datacenter.
 When `localDc` is not provided connections to all nodes will be allowed.
 
+Before this fix, affected releases silently ignored the `localDc` argument and allowed nodes from all
+datacenters. `localDc` is now enforced, and datacenter names are matched case-sensitively. Before upgrading,
+verify that it exactly matches a datacenter reported by the cluster; an unknown or case-mismatched name leaves
+no eligible nodes and causes requests to fail with an empty load-balancing plan.
+
 **WARNING**:
 This is a change in behavior. In the `cassandra-driver`, when `localDc` would not be provided,
 `localDataCenter` from client options would be used.
