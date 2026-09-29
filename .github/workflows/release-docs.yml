@@ -37,30 +37,12 @@ jobs:
           ref: ${{ github.sha }}
           persist-credentials: false
           fetch-depth: 0
-      - name: Verify requested commit
-        if: inputs.ref != ''
-        env:
-          REQUESTED_REF: ${{ inputs.ref }}
-        run: |
-          if [[ ! "$REQUESTED_REF" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::The reusable workflow ref must be a full commit SHA."
-            exit 1
-          fi
-          test "$(git rev-parse HEAD)" = "$REQUESTED_REF"
-      - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: "3.12"
       - name: Validate release versions
         id: version
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          args=()
-          if [[ -n "$BASE_SHA" ]]; then
-            args+=(--base-ref "$BASE_SHA")
-          fi
-          python .github/scripts/release-version.py "${args[@]}"
+        uses: ./.github/common/validate-release
+        with:
+          requested-ref: ${{ inputs.ref }}
+          base-ref: ${{ github.event.pull_request.base.sha }}
 
   build:
     if: needs.validate-release.outputs.run-check == 'true'

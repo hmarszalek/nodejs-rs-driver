@@ -66,20 +66,9 @@ jobs:
         env:
           RELEASE_SHA: ${{ github.sha }}
           RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: |
-          remote_tag=$(git ls-remote --refs origin "refs/tags/$RELEASE_TAG") || {
-            echo "::error::Could not check the remote release tag."
-            exit 1
-          }
-          if [[ -n "$remote_tag" ]]; then
-            remote_sha=${remote_tag%%[[:space:]]*}
-            if [[ "$remote_sha" != "$RELEASE_SHA" ]]; then
-              echo "::error::Remote tag $RELEASE_TAG points to $remote_sha, not $RELEASE_SHA."
-              exit 1
-            fi
-            echo "Remote tag $RELEASE_TAG already points to the release commit."
-          fi
+        run: bash .github/scripts/check-release-tag.sh optional "$RELEASE_TAG" "$RELEASE_SHA"
       - name: Check for open release blockers
+        if: inputs.publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: bash .github/scripts/check-release-blockers.sh
@@ -338,7 +327,7 @@ jobs:
           node-version: 24
           registry-url: "https://registry.npmjs.org"
       - name: Recheck release order
-        run: bash .github/scripts/check-release-order.sh not-older
+        run: bash .github/scripts/check-release-order.sh newer
       - name: Recheck for open release blockers
         env:
           GH_TOKEN: ${{ github.token }}
@@ -347,28 +336,7 @@ jobs:
         env:
           RELEASE_SHA: ${{ github.sha }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
-        run: |
-          remote_tag=$(git ls-remote --refs origin "refs/tags/$RELEASE_TAG") || {
-            echo "::error::Could not recheck the remote release tag."
-            exit 1
-          }
-          if [[ -n "$remote_tag" ]]; then
-            remote_sha=${remote_tag%%[[:space:]]*}
-            if [[ "$remote_sha" != "$RELEASE_SHA" ]]; then
-              echo "::error::Remote tag $RELEASE_TAG points to $remote_sha, not $RELEASE_SHA."
-              exit 1
-            fi
-            echo "Remote tag $RELEASE_TAG already points to the release commit."
-          else
-            test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
-            git tag "$RELEASE_TAG" "$RELEASE_SHA"
-            git push origin "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
-          fi
-          remote_sha=$(git ls-remote --refs origin "refs/tags/$RELEASE_TAG" | cut -f1)
-          if [[ "$remote_sha" != "$RELEASE_SHA" ]]; then
-            echo "::error::Remote tag $RELEASE_TAG points to $remote_sha, not $RELEASE_SHA."
-            exit 1
-          fi
+        run: bash .github/scripts/check-release-tag.sh create "$RELEASE_TAG" "$RELEASE_SHA"
 
   publish:
     needs:
@@ -493,7 +461,7 @@ jobs:
                 exit 1
               fi
               if [[ "$attempt" -lt 5 ]]; then
-                sleep 5
+                sleep 15
               fi
             done
             echo "::error::Could not verify $package_spec after publication."
@@ -582,11 +550,7 @@ jobs:
           RELEASE_SHA: ${{ github.sha }}
           RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
         run: |
-          remote_sha=$(git ls-remote --refs origin "refs/tags/$RELEASE_TAG" | cut -f1)
-          if [[ "$remote_sha" != "$RELEASE_SHA" ]]; then
-            echo "::error::Remote tag $RELEASE_TAG points to $remote_sha, not $RELEASE_SHA."
-            exit 1
-          fi
+          bash .github/scripts/check-release-tag.sh required "$RELEASE_TAG" "$RELEASE_SHA"
           if release_is_draft=$(gh release view "$RELEASE_TAG" --json isDraft --jq '.isDraft' 2>/dev/null); then
             if [[ "$release_is_draft" == "true" ]]; then
               gh release upload "$RELEASE_TAG" artifacts/*.node --clobber
