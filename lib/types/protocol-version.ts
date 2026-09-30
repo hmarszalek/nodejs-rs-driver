@@ -38,9 +38,9 @@ enum protocolVersion {
     /** DataStax Enterprise protocol v2, DSE 6.0+ */
     dseV2 = 0x42,
     /** Returns the higher protocol version that is supported by this driver. */
-    maxSupported = 0x42,
+    maxSupported = 0x04,
     /** Returns the lower protocol version that is supported by this driver. */
-    minSupported = 0x01,
+    minSupported = 0x04,
 }
 
 /**
