@@ -13,6 +13,11 @@
       "name": "Wojciech Przytuła",
       "email": "wojciech.przytula@scylladb.com",
       "url": "https://github.com/wprzytula"
+    },
+    {
+      "name": "Hanna Marszałek",
+      "email": "hanna.marszalek@scylladb.com",
+      "url": "https://github.com/hmarszalek"
     }
   ],
   "main": "main.js",
