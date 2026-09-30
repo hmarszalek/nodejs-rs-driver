@@ -8,7 +8,13 @@ const { StrategyKind } = require("../../../../lib/metadata/strategy");
 describe("Metadata#getKeyspace()", function () {
     this.timeout(60000);
 
-    const setupInfo = helper.setup("2:0");
+    // Cassandra does not reliably reach schema agreement for some of those tests within
+    // the 10s the driver waits by default. 60s is what the underlying Rust driver itself defaults to.
+    const setupInfo = helper.setup("2:0", {
+        clientOptions: {
+            protocolOptions: { maxSchemaAgreementWaitSeconds: 60 },
+        },
+    });
 
     describe("when called with keyspace name", function () {
         it("should return null for non-existent keyspace", function (done) {
