@@ -19,6 +19,8 @@ integer.js
 integer.d.ts
 local-date.js
 local-date.d.ts
+protocol-version.js
+protocol-version.d.ts
 row.js
 row.d.ts
 vector.js
