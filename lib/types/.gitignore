@@ -19,3 +19,5 @@ integer.js
 integer.d.ts
 local-date.js
 local-date.d.ts
+row.js
+row.d.ts
