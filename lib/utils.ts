@@ -522,18 +522,16 @@ class HashSet {
     }
     /**
      * Removes the item from set.
-     *
-     * Note that only the `false` case is actually reported: a successful
-     * removal falls off the end of the method and answers `undefined`.
      * @param key
-     * @returns Returns false if the key was not in the set.
+     * @returns Returns true if the key existed and was removed, otherwise it returns false.
      */
-    remove(key: any): boolean | undefined {
+    remove(key: any): boolean {
         if (!this.contains(key)) {
             return false;
         }
         delete this.items[key];
         this.length--;
+        return true;
     }
     /**
      * Returns an array containing the set items.
