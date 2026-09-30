@@ -15,3 +15,5 @@ inet-address.js
 inet-address.d.ts
 duration.js
 duration.d.ts
+integer.js
+integer.d.ts
