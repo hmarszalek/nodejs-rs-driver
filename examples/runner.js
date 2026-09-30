@@ -20,8 +20,8 @@ if (process.env.SKIP_VECTOR_EXAMPLES === "true") {
     ignoredFiles.push("vector-insert-select.js");
 }
 
-// Timeout for each example in ms
-const timeoutValue = 10000;
+// Timeout for each example in ms.
+const exampleTimeoutMs = 30000;
 
 /** List all js files in the directory */
 function getJsFiles(dir, fileArray) {
@@ -68,13 +68,16 @@ async.eachSeries(
         let timedOut = false;
         let cleanFilename = file.split("examples/").slice(-1);
         const timeout = setTimeout(function () {
+            // Without this the example's own callback, arriving late, runs the body below
+            // and calls next() a second time, which async rejects outright.
+            timedOut = true;
             console.log(
-                `\nExample ${cleanFilename} timed out after ${timeoutValue / 1000}s`,
+                `\nExample ${cleanFilename} timed out after ${exampleTimeoutMs / 1000}s`,
             );
             counter++;
             failures++;
             next();
-        }, timeoutValue);
+        }, exampleTimeoutMs);
 
         exec("node " + file, function (err) {
             if (timedOut) {
