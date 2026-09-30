@@ -7,12 +7,10 @@ inputs:
   server:
     description: "Server to run the tests against: scylla or cassandra"
     required: false
-    type: string
     default: scylla
   scylla-arch:
     description: "Architecture of the ScyllaDB package installed by CCM"
     required: false
-    type: string
 
 runs:
   using: "composite"

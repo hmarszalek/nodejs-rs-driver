@@ -1,0 +1,53 @@
+name: Validate release version
+description: Validate release version sources and detect version changes
+
+inputs:
+  requested-ref:
+    description: Full commit SHA requested by a reusable workflow caller
+    required: false
+    default: ""
+  base-ref:
+    description: Git ref whose release version should be compared
+    required: false
+    default: ""
+
+outputs:
+  version:
+    description: Validated release version
+    value: ${{ steps.version.outputs.version }}
+  tag:
+    description: Validated release tag
+    value: ${{ steps.version.outputs.tag }}
+  changed:
+    description: Whether the release version differs from the base ref
+    value: ${{ steps.version.outputs.changed }}
+
+runs:
+  using: composite
+  steps:
+    - name: Verify requested commit
+      if: inputs.requested-ref != ''
+      env:
+        REQUESTED_REF: ${{ inputs.requested-ref }}
+      shell: bash
+      run: |
+        if [[ ! "$REQUESTED_REF" =~ ^[0-9a-f]{40}$ ]]; then
+          echo "::error::The reusable workflow ref must be a full commit SHA."
+          exit 1
+        fi
+        test "$(git rev-parse HEAD)" = "$REQUESTED_REF"
+    - name: Set up Python
+      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: "3.12"
+    - name: Validate release versions
+      id: version
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+      shell: bash
+      run: |
+        args=()
+        if [[ -n "$BASE_REF" ]]; then
+          args+=(--base-ref "$BASE_REF")
+        fi
+        python .github/scripts/release-version.py "${args[@]}"
