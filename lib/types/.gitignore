@@ -29,5 +29,7 @@ results-wrapper.js
 results-wrapper.d.ts
 row.js
 row.d.ts
+time-uuid.js
+time-uuid.d.ts
 vector.js
 vector.d.ts
