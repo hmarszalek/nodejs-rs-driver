@@ -13,3 +13,5 @@ cql-utils.js
 cql-utils.d.ts
 inet-address.js
 inet-address.d.ts
+duration.js
+duration.d.ts
