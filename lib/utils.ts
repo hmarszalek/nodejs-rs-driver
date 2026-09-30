@@ -1,9 +1,5 @@
 "use strict";
 
-import util = require("util");
-import net = require("net");
-import { EventEmitter } from "events";
-
 import errors = require("./errors");
 import promiseUtils = require("./promise-utils");
 import type { PreparedInfo } from "./new-utils";
@@ -31,8 +27,6 @@ type CompareFunction = (a: any, b: any) => number;
  * @const
  */
 const maxInt = 9007199254740992;
-
-const maxInt32 = 0x7fffffff;
 
 const emptyObject: Readonly<{ [key: string]: any }> = Object.freeze({});
 
@@ -538,96 +532,6 @@ class HashSet {
      */
     toArray(): Array<string> {
         return Object.keys(this.items);
-    }
-}
-
-/**
- * Utility class that resolves host names into addresses.
- */
-class AddressResolver {
-    #resolve4: (hostname: string) => Promise<Array<string>>;
-    #nameOrIp: string;
-    #isIp: number;
-    #index: number;
-    #addresses: Array<string> | null;
-    #refreshing: EventEmitter | null;
-
-    /**
-     * Creates a new instance of the resolver.
-     */
-    constructor(options: { nameOrIp: string; dns?: any }) {
-        if (!options || !options.nameOrIp || !options.dns) {
-            throw new Error(
-                "nameOrIp and dns lib must be provided as part of the options",
-            );
-        }
-
-        this.#resolve4 = util.promisify(options.dns.resolve4);
-        this.#nameOrIp = options.nameOrIp;
-        this.#isIp = net.isIP(options.nameOrIp);
-        this.#index = 0;
-        this.#addresses = null;
-        this.#refreshing = null;
-    }
-
-    /**
-     * Resolves the addresses for the host name.
-     */
-    async init(): Promise<void> {
-        if (this.#isIp) {
-            return;
-        }
-
-        await this.#resolve();
-    }
-
-    /**
-     * Tries to resolve the addresses for the host name.
-     */
-    async refresh(): Promise<void> {
-        if (this.#isIp) {
-            return;
-        }
-
-        if (this.#refreshing) {
-            return await promiseUtils.fromEvent(this.#refreshing, "finished");
-        }
-
-        this.#refreshing = new EventEmitter().setMaxListeners(0);
-
-        try {
-            await this.#resolve();
-        } catch (err) {
-            // Ignore the possible resolution error
-        }
-
-        this.#refreshing.emit("finished");
-        this.#refreshing = null;
-    }
-
-    async #resolve(): Promise<void> {
-        const arr = await this.#resolve4(this.#nameOrIp);
-
-        if (!arr || arr.length === 0) {
-            throw new Error(`${this.#nameOrIp} could not be resolved`);
-        }
-
-        this.#addresses = arr;
-    }
-
-    /**
-     * Returns resolved ips in a round-robin fashion.
-     */
-    getIp(): string {
-        if (this.#isIp) {
-            return this.#nameOrIp;
-        }
-
-        const addresses = this.#addresses!;
-        const item = addresses[this.#index % addresses.length];
-        this.#index = this.#index !== maxInt32 ? this.#index + 1 : 0;
-
-        return item;
     }
 }
 
@@ -1271,7 +1175,6 @@ const exportedEmptyArray: ReadonlyArray<any> = Object.freeze([]);
 export {
     adaptNamedParamsPrepared,
     adaptNamedParamsWithHints,
-    AddressResolver,
     allocBuffer,
     allocBufferUnsafe,
     allocBufferFromArray,
