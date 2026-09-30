@@ -21,3 +21,5 @@ local-date.js
 local-date.d.ts
 row.js
 row.d.ts
+vector.js
+vector.d.ts
