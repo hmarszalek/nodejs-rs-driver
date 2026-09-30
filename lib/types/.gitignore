@@ -21,6 +21,8 @@ local-date.js
 local-date.d.ts
 protocol-version.js
 protocol-version.d.ts
+result-set.js
+result-set.d.ts
 result-stream.js
 result-stream.d.ts
 results-wrapper.js
