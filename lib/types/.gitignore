@@ -23,6 +23,8 @@ protocol-version.js
 protocol-version.d.ts
 result-stream.js
 result-stream.d.ts
+results-wrapper.js
+results-wrapper.d.ts
 row.js
 row.d.ts
 vector.js
